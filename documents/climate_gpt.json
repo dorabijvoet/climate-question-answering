@@ -1,0 +1,1 @@
+{"faiss_index_factory_str": "Flat", "index": "climate_gpt", "similarity": "dot_product", "embedding_dim": 768}
