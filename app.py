@@ -5,18 +5,17 @@ from haystack.nodes import EmbeddingRetriever
 import numpy as np
 import openai
 
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-
-system_template = {
-    "role": "system",
-    "content": "You have been a climate change expert for 30 years. You answer questions about climate change in an educationnal and concise manner.",
-}
-
-
 document_store = FAISSDocumentStore.load(
     index_path=f"./documents/climate_gpt.faiss",
     config_path=f"./documents/climate_gpt.json",
 )
+
+classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+system_template = {
+    "role": "system",
+    "content": "You have been a climate change expert for 30 years. You answer questions about climate change in an educationnal and concise manner. Whenever possible your answers are backed up by facts and numbers from scientific reports.",
+}
+
 dense = EmbeddingRetriever(
     document_store=document_store,
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
@@ -48,9 +47,11 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
     if retrieve:
         docs = dense.retrieve(query=query, top_k=5)
         sources = "\n\n".join(
-            ["If relevant, use those extracts from IPCC reports in your answer"]
+            [
+                "If relevant, use those extracts in your answer and give the reference of the information you used."
+            ]
             + [
-                f"{d.meta['path']} Page {d.meta['page_id']} paragraph {d.meta['paragraph_id']}:\n{d.content}"
+                f"{d.meta['file_name']} Page {d.meta['page_number']}\n{d.content}"
                 for d in docs
             ]
         )
@@ -65,19 +66,18 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
 
     if retrieve:
         messages.pop()
-        answer = "(top 5 documents retrieved) " + answer
+        # answer = "(top 5 documents retrieved) " + answer
         sources = "\n\n".join(
-            f"{d.meta['path']} Page {d.meta['page_id']} paragraph {d.meta['paragraph_id']}:\n{d.content[:100]} [...]"
+            f"{d.meta['file_name']} Page {d.meta['page_number']}:\n{d.content}"
             for d in docs
         )
-
     messages.append({"role": "assistant", "content": answer})
-
     gradio_format = make_pairs([a["content"] for a in messages[1:]])
 
     return gradio_format, messages, sources
 
 
+# Gradio
 def connect(text):
     openai.api_key = text
     return "You're all set"
@@ -92,10 +92,9 @@ with gr.Blocks(title="Eki IPCC Explorer") as demo:
             result = gr.Textbox(label="Connection")
 
     connect_btn.click(connect, inputs=api_key, outputs=result, api_name="Connection")
-
     gr.Markdown(
         """
-        # Ask me anything, I'm an IPCC report
+        # Ask me anything, I'm a climate expert
         """
     )
 
@@ -121,3 +120,4 @@ with gr.Blocks(title="Eki IPCC Explorer") as demo:
     )
 
 demo.launch(share=True)
+
