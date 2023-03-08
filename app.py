@@ -14,8 +14,8 @@ system_template = {
 
 
 document_store = FAISSDocumentStore.load(
-    index_path=f"./climate_gpt.faiss",
-    config_path=f"./climate_gpt.json",
+    index_path=f"./documents/climate_gpt.faiss",
+    config_path=f"./documents/climate_gpt.json",
 )
 dense = EmbeddingRetriever(
     document_store=document_store,
