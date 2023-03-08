@@ -119,5 +119,5 @@ with gr.Blocks(title="Eki IPCC Explorer") as demo:
         fn=gen_conv, inputs=[ask, state], outputs=[chatbot, state, sources_textbox]
     )
 
-demo.launch(share=True)
+demo.launch()
 
