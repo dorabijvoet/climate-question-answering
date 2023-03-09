@@ -1,6 +1,6 @@
 ---
 title: Climategpt
-emoji: 💩
+emoji: 🌍
 colorFrom: indigo
 colorTo: blue
 sdk: gradio
