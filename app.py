@@ -22,6 +22,7 @@ dense = EmbeddingRetriever(
     model_format="sentence_transformers",
 )
 
+openai.api_key=""
 
 def is_climate_change_related(sentence: str) -> bool:
     results = classifier(
