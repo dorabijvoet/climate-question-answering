@@ -4,6 +4,7 @@ from haystack.document_stores import FAISSDocumentStore
 from haystack.nodes import EmbeddingRetriever
 import numpy as np
 import openai
+import os
 
 document_store = FAISSDocumentStore.load(
     index_path=f"./documents/climate_gpt.faiss",
@@ -22,7 +23,6 @@ dense = EmbeddingRetriever(
     model_format="sentence_transformers",
 )
 
-openai.api_key=""
 
 def is_climate_change_related(sentence: str) -> bool:
     results = classifier(
@@ -89,12 +89,7 @@ def set_openai_api_key(api_key):
     
 # Gradio
 with gr.Blocks(title="Eki IPCC Explorer") as demo:
-    gr.Markdown(
-        """
-        # Add your OPENAI api key First
-        """
-    )
-    
+    gr.Markdown("""# Add your OPENAI api key First""")
     with gr.Row():
             openai_api_key_textbox = gr.Textbox(
                 placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
@@ -104,12 +99,7 @@ with gr.Blocks(title="Eki IPCC Explorer") as demo:
             )
     
     
-    gr.Markdown(
-        """
-        # Ask me anything, I'm a climate expert
-        """
-    )
-
+    gr.Markdown("""# Ask me anything, I'm a climate expert""")
     with gr.Row():
         with gr.Column(scale=2):
             chatbot = gr.Chatbot()
