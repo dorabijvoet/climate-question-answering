@@ -78,9 +78,9 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
 
 
 # Gradio
-def connect(text):
+def connect(text=""):
     openai.api_key = text
-    return "You're all set"
+    return f"You're all set: this is your api key: {openai.api_key}"
 
 
 with gr.Blocks(title="Eki IPCC Explorer") as demo:
