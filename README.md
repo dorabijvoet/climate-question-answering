@@ -1,8 +1,8 @@
 ---
 title: Climategpt
 emoji: 🌍
-colorFrom: indigo
-colorTo: blue
+colorFrom: blue
+colorTo: pink
 sdk: gradio
 sdk_version: 3.19.1
 app_file: app.py
