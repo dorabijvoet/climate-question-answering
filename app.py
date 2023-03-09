@@ -14,9 +14,6 @@ document_store = FAISSDocumentStore.load(
 
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 system_template = {"role": os.environ["role"], "content": os.environ["content"]}
-api_key_default = os.environ["api_key"]
-openai.api_key = api_key_default
-
 
 dense = EmbeddingRetriever(
     document_store=document_store,
@@ -83,15 +80,16 @@ def set_openai_api_key(text):
     """Set the api key and return chain.
     If no api_key, then None is returned.
     """
+    openai.api_key = os.environ["api_key"]
+
     if text.startswith("sk-") and len(text) > 10:
         openai.api_key = text
-    else:
-        openai.api_key = api_key_default
     return f"You're all set: this is your api key: {openai.api_key}"
 
 
 # Gradio
 with gr.Blocks(title="Eki IPCC Explorer") as demo:
+    openai.api_key = os.environ["api_key"]
     gr.Markdown("# Climate GPT")
     with gr.Row():
         gr.Markdown("First step: Add your OPENAI api key")
