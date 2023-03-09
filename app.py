@@ -78,21 +78,32 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
     return gradio_format, messages, sources
 
 
-# Gradio
-def connect(text=""):
-    openai.api_key = text
+def set_openai_api_key(api_key):
+    """Set the api key and return chain.
+    If no api_key, then None is returned.
+    """
+    os.environ["OPENAI_API_KEY"] = api_key
+    openai.api_key = api_key
     return f"You're all set: this is your api key: {openai.api_key}"
 
-
+    
+# Gradio
 with gr.Blocks(title="Eki IPCC Explorer") as demo:
+    gr.Markdown(
+        """
+        # Add your OPENAI api key First
+        """
+    )
+    
     with gr.Row():
-        with gr.Column():
-            api_key = gr.Textbox(label="Open AI api key")
-            connect_btn = gr.Button(value="Connect")
-        with gr.Column():
-            result = gr.Textbox(label="Connection")
-
-    connect_btn.click(connect, inputs=api_key, outputs=result, api_name="Connection")
+            openai_api_key_textbox = gr.Textbox(
+                placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+                show_label=False,
+                lines=1,
+                type="password",
+            )
+    
+    
     gr.Markdown(
         """
         # Ask me anything, I'm a climate expert
@@ -119,6 +130,9 @@ with gr.Blocks(title="Eki IPCC Explorer") as demo:
     ask.submit(
         fn=gen_conv, inputs=[ask, state], outputs=[chatbot, state, sources_textbox]
     )
+    
+    openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
+    openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
 demo.launch()
 
