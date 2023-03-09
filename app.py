@@ -46,9 +46,7 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
     if retrieve:
         docs = dense.retrieve(query=query, top_k=5)
         sources = "\n\n".join(
-            [
-                "If relevant, use those extracts in your answer and give the reference of the information you used."
-            ]
+            [os.environ["sources"]]
             + [
                 f"{d.meta['file_name']} Page {d.meta['page_number']}\n{d.content}"
                 for d in docs
