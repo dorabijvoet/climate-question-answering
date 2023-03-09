@@ -6,16 +6,14 @@ import numpy as np
 import openai
 import os
 
+
 document_store = FAISSDocumentStore.load(
     index_path=f"./documents/climate_gpt.faiss",
     config_path=f"./documents/climate_gpt.json",
 )
 
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-system_template = {
-    "role": "system",
-    "content": "You have been a climate change expert for 30 years. You answer questions about climate change in an educationnal and concise manner. Whenever possible your answers are backed up by facts and numbers from scientific reports.",
-}
+system_template = {"role": os.environ["role"], "content": os.environ["content"]}
 
 dense = EmbeddingRetriever(
     document_store=document_store,
@@ -78,12 +76,14 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
     return gradio_format, messages, sources
 
 
-def set_openai_api_key(api_key):
+def set_openai_api_key(text):
     """Set the api key and return chain.
     If no api_key, then None is returned.
     """
-    os.environ["OPENAI_API_KEY"] = api_key
-    openai.api_key = api_key
+    if text and text.startswith("sk-") and len(text) > 50:
+        openai.api_key = text
+    else:
+        openai.api_key = os.environ["api_key"]
     return f"You're all set: this is your api key: {openai.api_key}"
 
 
