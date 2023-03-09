@@ -89,8 +89,10 @@ def set_openai_api_key(api_key):
     
 # Gradio
 with gr.Blocks(title="Eki IPCC Explorer") as demo:
-    gr.Markdown("""# Add your OPENAI api key First""")
-    with gr.Row():
+   with gr.Row(elem_id="center"):
+        gr.Markdown("# Climate GPT - ")
+   with gr.Row():
+        gr.Markdown("First step: Add your OPENAI api key")
             openai_api_key_textbox = gr.Textbox(
                 placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
                 show_label=False,
