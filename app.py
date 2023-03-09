@@ -86,21 +86,19 @@ def set_openai_api_key(api_key):
     openai.api_key = api_key
     return f"You're all set: this is your api key: {openai.api_key}"
 
-    
+
 # Gradio
 with gr.Blocks(title="Eki IPCC Explorer") as demo:
-   with gr.Row(elem_id="center"):
-        gr.Markdown("# Climate GPT - ")
-   with gr.Row():
+    gr.Markdown("# Climate GPT")
+    with gr.Row():
         gr.Markdown("First step: Add your OPENAI api key")
         openai_api_key_textbox = gr.Textbox(
-                placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
-                show_label=False,
-                lines=1,
-                type="password",
-            )
-    
-    
+            placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+            show_label=False,
+            lines=1,
+            type="password",
+        )
+
     gr.Markdown("""# Ask me anything, I'm a climate expert""")
     with gr.Row():
         with gr.Column(scale=2):
@@ -122,9 +120,8 @@ with gr.Blocks(title="Eki IPCC Explorer") as demo:
     ask.submit(
         fn=gen_conv, inputs=[ask, state], outputs=[chatbot, state, sources_textbox]
     )
-    
+
     openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
     openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
 demo.launch()
-
