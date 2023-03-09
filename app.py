@@ -89,14 +89,14 @@ def set_openai_api_key(text):
 with gr.Blocks(title="Eki IPCC Explorer") as demo:
     openai.api_key = os.environ["api_key"]
     gr.Markdown("# Climate GPT")
-    with gr.Row():
-        gr.Markdown("First step: Add your OPENAI api key")
-        openai_api_key_textbox = gr.Textbox(
-            placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
-            show_label=False,
-            lines=1,
-            type="password",
-        )
+    # with gr.Row():
+    #     gr.Markdown("First step: Add your OPENAI api key")
+    #     openai_api_key_textbox = gr.Textbox(
+    #         placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+    #         show_label=False,
+    #         lines=1,
+    #         type="password",
+    #     )
 
     gr.Markdown("""# Ask me anything, I'm a climate expert""")
     with gr.Row():
@@ -115,11 +115,16 @@ with gr.Blocks(title="Eki IPCC Explorer") as demo:
             sources_textbox = gr.Textbox(
                 interactive=False, show_label=False, max_lines=50
             )
-
     ask.submit(
         fn=gen_conv, inputs=[ask, state], outputs=[chatbot, state, sources_textbox]
     )
-
+    with gr.Accordion("Add your personal openai api key", open=False):
+        openai_api_key_textbox = gr.Textbox(
+            placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+            show_label=False,
+            lines=1,
+            type="password",
+        )
     openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
     openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
