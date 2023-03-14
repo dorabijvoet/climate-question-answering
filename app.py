@@ -78,9 +78,9 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
 
 
 # Gradio
-css_code = ".gradio-container {background-image: url('file=background.png')}"
+# css_code = ".gradio-container {background-image: url('file=background.png')}"
 
-with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
+with gr.Blocks(title="🌍 ClimateGPT Ekimetrics") as demo:  # css=css_code
 
     openai.api_key = os.environ["api_key"]
     # gr.Markdown("# Climate GPT")
@@ -101,7 +101,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
     # gr.Markdown("""### Ask me anything, I'm a climate expert""")
     with gr.Row():
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(css=".gradio-container {background-color: blue}")
+            chatbot = gr.Chatbot()
             state = gr.State([system_template])
 
             with gr.Row():
@@ -132,5 +132,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         )
     openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
     openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
+
+    img = gr.Image("Ekimetrics_Logo_Color.jpg")
 
 demo.launch()
