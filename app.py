@@ -90,61 +90,69 @@ css_code = ".gradio-container {background-image: url('file=background.png');back
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
     openai.api_key = os.environ["api_key"]
-    gr.Markdown("### Welcome to Climate GPT 🌍 ! ")
-    gr.Markdown(
+
+    with gr.Tab("App"):
+        gr.Markdown("### Welcome to Climate GPT 🌍 ! ")
+        gr.Markdown(
+            """
+            Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
+
+            IPCC is a United Nations body that assesses the science related to climate change, including its impacts and possible response options. The IPCC is considered the leading scientific authority on all things related to global climate change.
         """
-        Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
-
-        IPCC is a United Nations body that assesses the science related to climate change, including its impacts and possible response options. The IPCC is considered the leading scientific authority on all things related to global climate change.
-    """
-    )
-    gr.Markdown(
-        "**How does it work:** This Chatbot is a combination of two technologies. FAISS search applied to a vast amount of scientific climate reports and TurboGPT to generate human-like text from the part of the document extracted from the database."
-    )
-    gr.Markdown(
-        "⚠️ Warning: Always refer to the source (on the right side) to ensure the validity of the information communicated."
-    )
-    # gr.Markdown("""### Ask me anything, I'm a climate expert""")
-    with gr.Row():
-        with gr.Column(scale=2):
-            chatbot = gr.Chatbot()
-            state = gr.State([system_template])
-
-            with gr.Row():
-                ask = gr.Textbox(
-                    show_label=False,
-                    placeholder="Enter text and press enter",
-                    sample_inputs=["which country polutes the most ?"],
-                ).style(container=False)
-                print(f"Type from ask textbox {ask.type}")
-
-        with gr.Column(scale=1, variant="panel"):
-            gr.Markdown("### Sources")
-            sources_textbox = gr.Textbox(
-                interactive=False, show_label=False, max_lines=50
-            )
-
-    ask.submit(
-        fn=gen_conv,
-        inputs=[
-            ask,
-            gr.inputs.Dropdown(
-                ["IPCC only", "All available"],
-                default="All available",
-                label="Select reports",
-            ),
-            state,
-        ],
-        outputs=[chatbot, state, sources_textbox],
-    )
-    with gr.Accordion("Add your personal openai api key", open=False):
-        openai_api_key_textbox = gr.Textbox(
-            placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
-            show_label=False,
-            lines=1,
-            type="password",
         )
-    openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
-    openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
+        gr.Markdown(
+            "**How does it work:** This Chatbot is a combination of two technologies. FAISS search applied to a vast amount of scientific climate reports and TurboGPT to generate human-like text from the part of the document extracted from the database."
+        )
+        gr.Markdown(
+            "⚠️ Warning: Always refer to the source (on the right side) to ensure the validity of the information communicated."
+        )
+        # gr.Markdown("""### Ask me anything, I'm a climate expert""")
+        with gr.Row():
+            with gr.Column(scale=2):
+                chatbot = gr.Chatbot()
+                state = gr.State([system_template])
 
+                with gr.Row():
+                    ask = gr.Textbox(
+                        show_label=False,
+                        placeholder="Enter text and press enter",
+                        sample_inputs=["which country polutes the most ?"],
+                    ).style(container=False)
+                    print(f"Type from ask textbox {ask.type}")
+
+            with gr.Column(scale=1, variant="panel"):
+                gr.Markdown("### Sources")
+                sources_textbox = gr.Textbox(
+                    interactive=False, show_label=False, max_lines=50
+                )
+
+        ask.submit(
+            fn=gen_conv,
+            inputs=[
+                ask,
+                gr.inputs.Dropdown(
+                    ["IPCC only", "All available"],
+                    default="All available",
+                    label="Select reports",
+                ),
+                state,
+            ],
+            outputs=[chatbot, state, sources_textbox],
+        )
+        with gr.Accordion("Add your personal openai api key", open=False):
+            openai_api_key_textbox = gr.Textbox(
+                placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+                show_label=False,
+                lines=1,
+                type="password",
+            )
+        openai_api_key_textbox.change(
+            set_openai_api_key, inputs=[openai_api_key_textbox]
+        )
+        openai_api_key_textbox.submit(
+            set_openai_api_key, inputs=[openai_api_key_textbox]
+        )
+
+    with gr.Tab("Information"):
+        gr.Markdown("Here write information ")
 demo.launch()
