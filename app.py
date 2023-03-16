@@ -93,7 +93,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
     gr.Markdown("### Welcome to Climate GPT 🌍 ! ")
     gr.Markdown(
         """
-        Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and ??.
+        Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
 
         IPCC is a United Nations body that assesses the science related to climate change, including its impacts and possible response options. The IPCC is considered the leading scientific authority on all things related to global climate change.
     """
@@ -102,7 +102,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         "**How does it work:** This Chatbot is a combination of two technologies. FAISS search applied to a vast amount of scientific climate reports and TurboGPT to generate human-like text from the part of the document extracted from the database."
     )
     gr.Markdown(
-        "⚠️ Warning: Always refer to the source (on the right side) to ensure the validity of the information communicated"
+        "⚠️ Warning: Always refer to the source (on the right side) to ensure the validity of the information communicated."
     )
     # gr.Markdown("""### Ask me anything, I'm a climate expert""")
     with gr.Row():
