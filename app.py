@@ -26,7 +26,7 @@ def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
     Returns:
         _type_: _description_
     """
-    if report_type == "giec":
+    if report_type == "IPCC only":
         document_store = FAISSDocumentStore.load(
             index_path="./documents/climate_gpt_only_giec.faiss",
             config_path="./documents/climate_gpt_only_giec.json",
@@ -89,17 +89,6 @@ css_code = ".gradio-container {background-image: url('file=background.png');back
 
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
-    document_store = FAISSDocumentStore.load(
-        index_path="./documents/climate_gpt.faiss",
-        config_path="./documents/climate_gpt.json",
-    )
-
-    dense = EmbeddingRetriever(
-        document_store=document_store,
-        embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
-        model_format="sentence_transformers",
-    )
-
     openai.api_key = os.environ["api_key"]
     gr.Markdown("### Welcome to Climate GPT 🌍 ! ")
     gr.Markdown(
@@ -137,7 +126,15 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
     ask.submit(
         fn=gen_conv,
-        inputs=[ask, gr.inputs.Dropdown(["giec only", "all"], default="all"), state],
+        inputs=[
+            ask,
+            gr.inputs.Dropdown(
+                ["IPCC only", "All available"],
+                default="All available",
+                label="Select reports",
+            ),
+            state,
+        ],
         outputs=[chatbot, state, sources_textbox],
     )
     with gr.Accordion("Add your personal openai api key", open=False):
