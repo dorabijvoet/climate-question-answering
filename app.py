@@ -10,22 +10,12 @@ from datasets import Dataset
 import time
 from utils import is_climate_change_related, make_pairs, set_openai_api_key
 
-document_store = FAISSDocumentStore.load(
-    index_path="./documents/climate_gpt.faiss",
-    config_path="./documents/climate_gpt.json",
-)
 
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 system_template = {"role": os.environ["role"], "content": os.environ["content"]}
 
-dense = EmbeddingRetriever(
-    document_store=document_store,
-    embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
-    model_format="sentence_transformers",
-)
 
-
-def gen_conv(query: str, history=[system_template], ipcc=True):
+def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
     """return (answer:str, history:list[dict], sources:str)
 
     Args:
@@ -36,6 +26,23 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
     Returns:
         _type_: _description_
     """
+    if report_type == "giec":
+        document_store = FAISSDocumentStore.load(
+            index_path="./documents/climate_gpt_only_giec.faiss",
+            config_path="./documents/climate_gpt_only_giec.json",
+        )
+    else:
+        document_store = FAISSDocumentStore.load(
+            index_path="./documents/climate_gpt.faiss",
+            config_path="./documents/climate_gpt.json",
+        )
+
+    dense = EmbeddingRetriever(
+        document_store=document_store,
+        embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
+        model_format="sentence_transformers",
+    )
+
     retrieve = ipcc and is_climate_change_related(query, classifier)
 
     sources = ""
@@ -78,12 +85,22 @@ def gen_conv(query: str, history=[system_template], ipcc=True):
 
 
 # Gradio
-css_code = ".gradio-container {background-image: url('file=background2.png')}"
+css_code = ".gradio-container {background-image: url('file=background.png');background-position: top right}"
 
-with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:  # css=css_code
+with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
+
+    document_store = FAISSDocumentStore.load(
+        index_path="./documents/climate_gpt.faiss",
+        config_path="./documents/climate_gpt.json",
+    )
+
+    dense = EmbeddingRetriever(
+        document_store=document_store,
+        embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
+        model_format="sentence_transformers",
+    )
 
     openai.api_key = os.environ["api_key"]
-    # gr.Markdown("# Climate GPT")
     gr.Markdown("### Welcome to Climate GPT 🌍 ! ")
     gr.Markdown(
         """
@@ -120,7 +137,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:  # css
 
     ask.submit(
         fn=gen_conv,
-        inputs=[ask, state],
+        inputs=[ask, gr.inputs.Dropdown(["giec only", "all"], default="all"), state],
         outputs=[chatbot, state, sources_textbox],
     )
     with gr.Accordion("Add your personal openai api key", open=False):
@@ -132,7 +149,5 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:  # css
         )
     openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
     openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
-
-    # img = gr.Image("Ekimetrics_Logo_Color.jpg")
 
 demo.launch()
