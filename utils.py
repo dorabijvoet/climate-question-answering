@@ -1,6 +1,8 @@
 import numpy as np
 import openai
 import os
+import random
+import string
 
 
 def is_climate_change_related(sentence: str, classifier) -> bool:
@@ -44,3 +46,10 @@ def set_openai_api_key(text):
     if text.startswith("sk-") and len(text) > 10:
         openai.api_key = text
     return f"You're all set: this is your api key: {openai.api_key}"
+
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = "".join(random.choice(letters) for i in range(length))
+    print("Random string of length", length, "is:", result_str)
