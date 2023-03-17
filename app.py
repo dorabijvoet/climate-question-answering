@@ -8,7 +8,12 @@ import os
 from datasets import load_dataset
 from datasets import Dataset
 import time
-from utils import is_climate_change_related, make_pairs, set_openai_api_key
+from utils import (
+    is_climate_change_related,
+    make_pairs,
+    set_openai_api_key,
+    get_random_string,
+)
 
 
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
@@ -91,22 +96,18 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
     openai.api_key = os.environ["api_key"]
 
+    user_id = gr.State([get_random_string(10)])
+
     with gr.Tab("App"):
-        gr.Markdown("### Welcome to Climate GPT 🌍 ! ")
         gr.Markdown(
             """
+            ### Welcome to Climate GPT 🌍 ! 
+            \n
             Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
-
-            IPCC is a United Nations body that assesses the science related to climate change, including its impacts and possible response options. The IPCC is considered the leading scientific authority on all things related to global climate change.
-        """
+            \n **How does it work:** This Chatbot is a combination of two technologies. FAISS search applied to a vast amount of scientific climate reports and TurboGPT to generate human-like text from the part of the document extracted from the database. 
+            \n ⚠️ Warning: Always refer to the source to ensure the validity of the information communicated.
+            """
         )
-        gr.Markdown(
-            "**How does it work:** This Chatbot is a combination of two technologies. FAISS search applied to a vast amount of scientific climate reports and TurboGPT to generate human-like text from the part of the document extracted from the database."
-        )
-        gr.Markdown(
-            "⚠️ Warning: Always refer to the source (on the right side) to ensure the validity of the information communicated."
-        )
-        # gr.Markdown("""### Ask me anything, I'm a climate expert""")
         with gr.Row():
             with gr.Column(scale=2):
                 chatbot = gr.Chatbot()
@@ -139,7 +140,10 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
             ],
             outputs=[chatbot, state, sources_textbox],
         )
-        with gr.Accordion("Add your personal openai api key", open=False):
+        with gr.Accordion("Feedbacks", open=False):
+            gr.Markdown("Please complete some feedbacks 🙏")
+
+        with gr.Accordion("Add your personal openai api key - Option", open=False):
             openai_api_key_textbox = gr.Textbox(
                 placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
                 show_label=False,
@@ -154,5 +158,30 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         )
 
     with gr.Tab("Information"):
-        gr.Markdown("Here write information ")
+        gr.Markdown(
+            """
+        ## 📖 Reports used : \n
+        - First Assessment Report on the Physical Science of Climate Change
+        - Second assessment Report on Climate Change Adaptation
+        - Third Assessment Report on Climate Change Mitigation
+        - Food Outlook Biannual Report on Global Food Markets
+        - IEA's report on the Role of Critical Minerals in Clean Energy Transitions
+        - Limits to Growth
+        - Outside The Safe operating system of the Planetary Boundary for Novel Entities
+        - Planetary Boundaries Guiding
+        - State of the Oceans report
+        - Word Energy Outlook 2021
+        - Word Energy Outlook 2022
+        - The environmental impacts of plastics and micro plastics use, waste and polution ET=U and national measures
+        - IPBES Global report - MArch 2022
+
+        \n
+        IPCC is a United Nations body that assesses the science related to climate change, including its impacts and possible response options. 
+        The IPCC is considered the leading scientific authority on all things related to global climate change.
+
+        """
+        )
+    with gr.Tab("Examples"):
+        gr.Markdown("See here some examples on how to use the Chatbot")
+
 demo.launch()
