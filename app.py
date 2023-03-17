@@ -89,6 +89,10 @@ def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
     return gradio_format, messages, sources
 
 
+def test(feed: str):
+    print(feed)
+
+
 # Gradio
 css_code = ".gradio-container {background-image: url('file=background.png');background-position: top right}"
 
@@ -99,7 +103,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
     user_id = gr.State([get_random_string(10)])
 
     with gr.Tab("App"):
-        gr.Markdown("### Welcome to Climate GPT 🌍 !")
+        gr.Markdown("# Welcome to Climate GPT 🌍 !")
         gr.Markdown(
             """ Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
             \n **How does it work:** This Chatbot is a combination of two technologies. FAISS search applied to a vast amount of scientific climate reports and TurboGPT to generate human-like text from the part of the document extracted from the database. 
@@ -140,6 +144,9 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         )
         with gr.Accordion("Feedbacks", open=False):
             gr.Markdown("Please complete some feedbacks 🙏")
+            feedback = gr.Textbox()
+            feedback_save = gr.Button(value="submit feedback")
+            feedback_save.click(test, inputs=[feedback])
 
         with gr.Accordion("Add your personal openai api key - Option", open=False):
             openai_api_key_textbox = gr.Textbox(
