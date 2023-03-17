@@ -70,12 +70,10 @@ def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
         model="gpt-3.5-turbo",
         messages=messages,
         temperature=0.2,
-        #         max_tokens=200,
     )["choices"][0]["message"]["content"]
 
     if retrieve:
         messages.pop()
-        # answer = "(top 5 documents retrieved) " + answer
         sources = "\n\n".join(
             f"{d.meta['file_name']} Page {d.meta['page_number']}:\n{d.content}"
             for d in docs
