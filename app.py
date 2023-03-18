@@ -13,24 +13,24 @@ system_template = {"role": "system", "content": os.environ["content"]}
 
 retrieve_all = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
-    index_path="./documents/climate_gpt.faiss",
-    config_path="./documents/climate_gpt.json",
-),
+        index_path="./documents/climate_gpt.faiss",
+        config_path="./documents/climate_gpt.json",
+    ),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
 )
 retrieve_giec = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
-    index_path="./documents/climate_gpt_only_giec.faiss",
-    config_path="./documents/climate_gpt_only_giec.json",
-),
+        index_path="./documents/climate_gpt_only_giec.faiss",
+        config_path="./documents/climate_gpt_only_giec.json",
+    ),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
 )
 
 
-def gen_conv(query: str, history: list = [system_template], report_type="All available", threshold=0.56):
-    retriever = retrieve_all if report_type=="All available" else retrieve_giec
+def chat(query: str, history: list = [system_template], report_type="All available", threshold=0.56):
+    retriever = retrieve_all if report_type == "All available" else retrieve_giec
     docs = retriever.retrieve(query=query, top_k=10)
 
     messages = history + [{"role": "user", "content": query}]
@@ -46,18 +46,25 @@ def gen_conv(query: str, history: list = [system_template], report_type="All ava
         messages.append({"role": "system", "content": "no relevant document available."})
         sources = "No environmental report was used to provide this answer."
 
-    answer = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages, temperature=0.2,)["choices"][0][
+    response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages, temperature=0.2,)["choices"][0][
         "message"
     ]["content"]
 
-    messages[-1] = {"role": "assistant", "content": answer}
-    gradio_format = make_pairs([a["content"] for a in messages[1:]])
+    complete_response = ""
 
-    return gradio_format, messages, sources
+    for chunk in response:
+        complete_response += chunk["choices"][0]["delta"].get("content", "")
+        messages[-1] = {"role": "assistant", "content": complete_response}
+        gradio_format = make_pairs([a["content"] for a in messages[1:]])
+        yield gradio_format, messages, sources
 
 
 def test(feed: str):
     print(feed)
+
+
+def reset_textbox():
+    return gr.update(value="")
 
 
 # Gradio
@@ -95,7 +102,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
                 sources_textbox = gr.Textbox(interactive=False, show_label=False, max_lines=50)
 
         ask.submit(
-            fn=gen_conv,
+            fn=chat,
             inputs=[
                 ask,
                 state,
@@ -107,6 +114,8 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
             ],
             outputs=[chatbot, state, sources_textbox],
         )
+        ask.submit(reset_textbox, [], [ask])
+
         with gr.Accordion("Feedbacks", open=False):
             gr.Markdown("Please complete some feedbacks 🙏")
             feedback = gr.Textbox()
@@ -150,4 +159,4 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
     with gr.Tab("Examples"):
         gr.Markdown("See here some examples on how to use the Chatbot")
 
-demo.launch()
+demo.launch(concurrency_count=16)
