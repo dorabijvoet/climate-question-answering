@@ -29,7 +29,20 @@ retrieve_giec = EmbeddingRetriever(
 )
 
 
-def chat(query: str, history: list = [system_template], report_type="All available", threshold=0.56):
+def chat(
+    query: str, history: list = [system_template], report_type: str = "All available", threshold: float = 0.56
+) -> tuple:
+    """retrieve relevant documents in the document store then query gpt-turbo
+
+    Args:
+        query (str): user message.
+        history (list, optional): history of the conversation. Defaults to [system_template].
+        report_type (str, optional): should be "All available" or "IPCC only". Defaults to "All available".
+        threshold (float, optional): similarity threshold, don't increase more than 0.568. Defaults to 0.56.
+
+    Yields:
+        tuple: chat gradio format, chat openai format, sources used.
+    """
     retriever = retrieve_all if report_type == "All available" else retrieve_giec
     docs = retriever.retrieve(query=query, top_k=10)
 
