@@ -46,12 +46,13 @@ def chat(query: str, history: list = [system_template], report_type="All availab
         messages.append({"role": "system", "content": "no relevant document available."})
         sources = "No environmental report was used to provide this answer."
 
-    response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages, temperature=0.2,)["choices"][0][
-        "message"
-    ]["content"]
-
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        temperature=0.2,
+        stream=True,
+    )
     complete_response = ""
-
     for chunk in response:
         if chunk_message := chunk["choices"][0]["delta"].get("content", None):
             complete_response += chunk_message
