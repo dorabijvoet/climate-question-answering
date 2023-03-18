@@ -1,7 +1,6 @@
 import gradio as gr
-from transformers import pipeline
 from haystack.document_stores import FAISSDocumentStore
-from haystack.nodes import EmbeddingRetriever, SentenceTransformersRanker
+from haystack.nodes import EmbeddingRetriever
 import numpy as np
 import openai
 import os
@@ -15,12 +14,21 @@ from utils import (
     get_random_string,
 )
 
-
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 system_template = {"role": os.environ["role"], "content": os.environ["content"]}
 
 
-def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
+only_ipcc_document_store = FAISSDocumentStore.load(
+    index_path="./documents/climate_gpt_only_giec.faiss",
+    config_path="./documents/climate_gpt_only_giec.json",
+)
+
+document_store = FAISSDocumentStore.load(
+    index_path="./documents/climate_gpt.faiss",
+    config_path="./documents/climate_gpt.json",
+)
+
+
+def gen_conv(query: str, history=[system_template], report_type="All available", threshold=0.56):
     """return (answer:str, history:list[dict], sources:str)
 
     Args:
@@ -31,57 +39,32 @@ def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
     Returns:
         _type_: _description_
     """
-    if report_type == "IPCC only":
-        document_store = FAISSDocumentStore.load(
-            index_path="./documents/climate_gpt_only_giec.faiss",
-            config_path="./documents/climate_gpt_only_giec.json",
-        )
-    else:
-        document_store = FAISSDocumentStore.load(
-            index_path="./documents/climate_gpt.faiss",
-            config_path="./documents/climate_gpt.json",
-        )
 
     dense = EmbeddingRetriever(
-        document_store=document_store,
+        document_store=document_store if report_type == "All available" else only_ipcc_document_store,
         embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
         model_format="sentence_transformers",
     )
 
-    retrieve = ipcc and is_climate_change_related(query, classifier)
+    messages = history + [{"role": "user", "content": query}]
+    docs = dense.retrieve(query=query, top_k=10)
+    sources = "\n\n".join(
+        f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
+        for i, d in enumerate(docs, 1)
+        if d.score > threshold
+    )
 
-    sources = ""
-    messages = history + [
-        {"role": "user", "content": query},
-    ]
-
-    if retrieve:
-        docs = dense.retrieve(query=query, top_k=5)
-        sources = "\n\n".join(
-            [os.environ["sources"]]
-            + [
-                f"{d.meta['file_name']} Page {d.meta['page_number']}\n{d.content}"
-                for d in docs
-            ]
-        )
-        messages.append({"role": "system", "content": sources})
-
-    answer = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        temperature=0.2,
-    )["choices"][0]["message"]["content"]
-
-    if retrieve:
-        messages.pop()
-        sources = "\n\n".join(
-            f"{d.meta['file_name']} Page {d.meta['page_number']}:\n{d.content}"
-            for d in docs
-        )
+    if sources:
+        messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
     else:
+        messages.append({"role": "system", "content": "no relevant document available."})
         sources = "No environmental report was used to provide this answer."
 
-    messages.append({"role": "assistant", "content": answer})
+    answer = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages, temperature=0.2,)["choices"][0][
+        "message"
+    ]["content"]
+
+    messages[-1] = {"role": "assistant", "content": answer}
     gradio_format = make_pairs([a["content"] for a in messages[1:]])
 
     return gradio_format, messages, sources
@@ -123,20 +106,18 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
             with gr.Column(scale=1, variant="panel"):
                 gr.Markdown("### Sources")
-                sources_textbox = gr.Textbox(
-                    interactive=False, show_label=False, max_lines=50
-                )
+                sources_textbox = gr.Textbox(interactive=False, show_label=False, max_lines=50)
 
         ask.submit(
             fn=gen_conv,
             inputs=[
                 ask,
+                state,
                 gr.inputs.Dropdown(
                     ["IPCC only", "All available"],
                     default="All available",
                     label="Select reports",
                 ),
-                state,
             ],
             outputs=[chatbot, state, sources_textbox],
         )
@@ -153,12 +134,8 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
                 lines=1,
                 type="password",
             )
-        openai_api_key_textbox.change(
-            set_openai_api_key, inputs=[openai_api_key_textbox]
-        )
-        openai_api_key_textbox.submit(
-            set_openai_api_key, inputs=[openai_api_key_textbox]
-        )
+        openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
+        openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
     with gr.Tab("Information"):
         gr.Markdown(
