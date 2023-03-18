@@ -25,7 +25,7 @@ def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
 
     Args:
         query (str): the user message
-        history (list, optional): _description_. Defaults to [system_template].
+        history (list, optional): history of the chat messages. Defaults to [system_template].
         ipcc (bool, optional): _description_. Defaults to True.
 
     Returns:
