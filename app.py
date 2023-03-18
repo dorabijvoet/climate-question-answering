@@ -62,22 +62,6 @@ def chat(
 
     if sources:
         messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
-    else:
-        messages.append(
-            {
-                "role": "system",
-                "content": """Tell the user you did not find any relevant documents. Answer using your knowledge. Then tell them if their message was too vague or too short and if relevant provide an example of an alternative query.
-        example: 
-        user: forrest
-        assistant: I did not find any relevant documents to answer your question, I will answer using my knowledge as a language model.
-        Forests play a crucial role in mitigating climate change. They act as carbon sinks, absorbing carbon dioxide from the atmosphere through photosynthesis and storing it in their biomass and soil. Deforestation, on the other hand, releases carbon dioxide into the atmosphere and reduces the planet's capacity to absorb carbon. Therefore, protecting and restoring forests is an important strategy for mitigating climate change.
-        
-        You may want to try one of those more specific questions:
-        - What is deforestation, and how does it contribute to climate change?
-        - How does climate change impact forests and their ecosystems?""",
-            }
-        )
-        sources = "No environmental report was used to provide this answer."
 
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -85,11 +69,21 @@ def chat(
         temperature=0.2,
         stream=True,
     )
-    complete_response = ""
+
+    if sources:
+        messages.pop()
+        complete_response = ""
+    else:
+        sources = "No environmental report was used to provide this answer."
+        complete_response = (
+            "No relevant documents found, for a sourced answer you may want to try a more specific question.\n\n"
+        )
+
+    messages.append({"role": "assistant", "content": complete_response})
     for chunk in response:
         if chunk_message := chunk["choices"][0]["delta"].get("content", None):
             complete_response += chunk_message
-            messages[-1] = {"role": "assistant", "content": complete_response}
+            messages[-1]["content"] = complete_response
             gradio_format = make_pairs([a["content"] for a in messages[1:]])
             yield gradio_format, messages, sources
 
@@ -115,13 +109,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         gr.Markdown(
             """ Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
             \n **How does it work:** when a user sends a message, the system retrieves the most relevant paragraphs from scientific reports that are semantically related to the user's question. These paragraphs are then used to generate a comprehensive and well-sourced answer using a language model.
-            \n **Usage guideline:** more sources will be retrieved using precise questions
-                instead of "forrest", you may want to try one of those more specific questions
-                - How do forests help mitigate climate change?
-                - What is deforestation, and how does it contribute to climate change?
-                - How does climate change impact forests and their ecosystems?
-                - Can reforestation efforts help combat climate change?
-                - What role do forests play in the carbon cycle, and how does that impact climate change? 
+            \n **Usage guideline:** more sources will be retrieved using precise questions.
             \n ⚠️ Always refer to the source to ensure the validity of the information communicated.
             """
         )

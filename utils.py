@@ -30,6 +30,7 @@ def make_pairs(lst):
     Returns:
         list: the list as tupple pairs
     """
+    assert not (l := len(lst) % 2), f"your list is of lenght {l} which is not even"
     return [(lst[i], lst[i + 1]) for i in range(0, len(lst), 2)]
 
 
