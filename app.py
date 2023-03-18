@@ -1,7 +1,7 @@
 import gradio as gr
 from transformers import pipeline
 from haystack.document_stores import FAISSDocumentStore
-from haystack.nodes import EmbeddingRetriever
+from haystack.nodes import EmbeddingRetriever, SentenceTransformersRanker
 import numpy as np
 import openai
 import os
@@ -24,7 +24,7 @@ def gen_conv(query: str, report_type, history=[system_template], ipcc=True):
     """return (answer:str, history:list[dict], sources:str)
 
     Args:
-        query (str): _description_
+        query (str): the user message
         history (list, optional): _description_. Defaults to [system_template].
         ipcc (bool, optional): _description_. Defaults to True.
 
