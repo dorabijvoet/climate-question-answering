@@ -1,30 +1,27 @@
 import gradio as gr
 from haystack.document_stores import FAISSDocumentStore
 from haystack.nodes import EmbeddingRetriever
-import numpy as np
 import openai
 import os
-from datasets import load_dataset
-from datasets import Dataset
-import time
 from utils import (
-    is_climate_change_related,
     make_pairs,
     set_openai_api_key,
     get_random_string,
 )
 
-system_template = {"role": os.environ["role"], "content": os.environ["content"]}
-
-
+system_template = {"role": "system", "content": os.environ["content"]}
 only_ipcc_document_store = FAISSDocumentStore.load(
     index_path="./documents/climate_gpt_only_giec.faiss",
     config_path="./documents/climate_gpt_only_giec.json",
 )
-
 document_store = FAISSDocumentStore.load(
     index_path="./documents/climate_gpt.faiss",
     config_path="./documents/climate_gpt.json",
+)
+retriever = EmbeddingRetriever(
+    document_store=document_store if report_type == "All available" else only_ipcc_document_store,
+    embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
+    model_format="sentence_transformers",
 )
 
 
@@ -40,14 +37,8 @@ def gen_conv(query: str, history=[system_template], report_type="All available",
         _type_: _description_
     """
 
-    dense = EmbeddingRetriever(
-        document_store=document_store if report_type == "All available" else only_ipcc_document_store,
-        embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
-        model_format="sentence_transformers",
-    )
-
     messages = history + [{"role": "user", "content": query}]
-    docs = dense.retrieve(query=query, top_k=10)
+    docs = retriever.retrieve(query=query, top_k=10)
     sources = "\n\n".join(
         f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
         for i, d in enumerate(docs, 1)
