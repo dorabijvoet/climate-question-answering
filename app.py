@@ -10,35 +10,30 @@ from utils import (
 )
 
 system_template = {"role": "system", "content": os.environ["content"]}
-only_ipcc_document_store = FAISSDocumentStore.load(
-    index_path="./documents/climate_gpt_only_giec.faiss",
-    config_path="./documents/climate_gpt_only_giec.json",
-)
-document_store = FAISSDocumentStore.load(
+
+retrieve_all = EmbeddingRetriever(
+    document_store=FAISSDocumentStore.load(
     index_path="./documents/climate_gpt.faiss",
     config_path="./documents/climate_gpt.json",
+),
+    embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
+    model_format="sentence_transformers",
 )
-retriever = EmbeddingRetriever(
-    document_store=document_store if report_type == "All available" else only_ipcc_document_store,
+retrieve_giec = EmbeddingRetriever(
+    document_store=FAISSDocumentStore.load(
+    index_path="./documents/climate_gpt_only_giec.faiss",
+    config_path="./documents/climate_gpt_only_giec.json",
+),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
 )
 
 
-def gen_conv(query: str, history=[system_template], report_type="All available", threshold=0.56):
-    """return (answer:str, history:list[dict], sources:str)
-
-    Args:
-        query (str): the user message
-        history (list, optional): history of the chat messages. Defaults to [system_template].
-        ipcc (bool, optional): _description_. Defaults to True.
-
-    Returns:
-        _type_: _description_
-    """
+def gen_conv(query: str, history: list = [system_template], report_type="All available", threshold=0.56):
+    retriever = retrieve_all if report_type=="All available" else retrieve_giec
+    docs = retriever.retrieve(query=query, top_k=10)
 
     messages = history + [{"role": "user", "content": query}]
-    docs = retriever.retrieve(query=query, top_k=10)
     sources = "\n\n".join(
         f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
         for i, d in enumerate(docs, 1)
