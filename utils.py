@@ -9,11 +9,11 @@ def is_climate_change_related(sentence: str, classifier) -> bool:
     """_summary_
 
     Args:
-        sentence (str): _description_
-        classifier (_type_): _description_
+        sentence (str): your sentence to classify
+        classifier (_type_): zero shot hugging face pipeline classifier
 
     Returns:
-        bool: _description_
+        bool: is_climate_change_related or not
     """
     results = classifier(
         sequences=sentence,
@@ -26,9 +26,9 @@ def is_climate_change_related(sentence: str, classifier) -> bool:
 def make_pairs(lst):
     """From a list of even lenght, make tupple pairs
     Args:
-        lst (list): _description_
+        lst (list): a list of even lenght
     Returns:
-        list: _description_
+        list: the list as tupple pairs
     """
     return [(lst[i], lst[i + 1]) for i in range(0, len(lst), 2)]
 

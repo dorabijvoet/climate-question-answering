@@ -43,7 +43,14 @@ def chat(
     Yields:
         tuple: chat gradio format, chat openai format, sources used.
     """
-    retriever = retrieve_all if report_type == "All available" else retrieve_giec
+
+    if report_type == "All available":
+        retriever = retrieve_all
+    elif report_type == "IPCC only":
+        retriever = retrieve_giec
+    else:
+        raise Exception("report_type arg should be in (All available, IPCC only)")
+
     docs = retriever.retrieve(query=query, top_k=10)
 
     messages = history + [{"role": "user", "content": query}]
