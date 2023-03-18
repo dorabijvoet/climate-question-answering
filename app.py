@@ -53,10 +53,11 @@ def chat(query: str, history: list = [system_template], report_type="All availab
     complete_response = ""
 
     for chunk in response:
-        complete_response += chunk["choices"][0]["delta"].get("content", "")
-        messages[-1] = {"role": "assistant", "content": complete_response}
-        gradio_format = make_pairs([a["content"] for a in messages[1:]])
-        yield gradio_format, messages, sources
+        if chunk_message := chunk["choices"][0]["delta"].get("content", None):
+            complete_response += chunk_message
+            messages[-1] = {"role": "assistant", "content": complete_response}
+            gradio_format = make_pairs([a["content"] for a in messages[1:]])
+            yield gradio_format, messages, sources
 
 
 def test(feed: str):
@@ -85,7 +86,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         )
         with gr.Row():
             with gr.Column(scale=2):
-                chatbot = gr.Chatbot()
+                chatbot = gr.Chatbot(elem_id="chatbot")
                 state = gr.State([system_template])
 
                 with gr.Row():
