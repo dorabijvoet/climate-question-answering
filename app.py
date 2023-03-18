@@ -159,3 +159,5 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         gr.Markdown("See here some examples on how to use the Chatbot")
 
     demo.queue(concurrency_count=16)
+
+demo.launch()
