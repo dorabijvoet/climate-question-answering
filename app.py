@@ -73,7 +73,6 @@ css_code = ".gradio-container {background-image: url('file=background.png');back
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
     openai.api_key = os.environ["api_key"]
-
     user_id = gr.State([get_random_string(10)])
 
     with gr.Tab("App"):
@@ -159,4 +158,4 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
     with gr.Tab("Examples"):
         gr.Markdown("See here some examples on how to use the Chatbot")
 
-demo.launch(concurrency_count=16)
+    demo.queue(concurrency_count=16)
