@@ -49,8 +49,13 @@ def set_openai_api_key(text):
     return f"You're all set: this is your api key: {openai.api_key}"
 
 
-def get_random_string(length):
-    # choose from all lowercase letter
+def create_user_id(length):
+    """Create user_id
+    Args:
+        length (int): length of user id
+    Returns:
+        str: String to id user
+    """
     letters = string.ascii_lowercase
-    result_str = "".join(random.choice(letters) for i in range(length))
-    print("Random string of length", length, "is:", result_str)
+    user_id = "".join(random.choice(letters) for i in range(length))
+    return user_id
