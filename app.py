@@ -6,8 +6,12 @@ import os
 from utils import (
     make_pairs,
     set_openai_api_key,
-    get_random_string,
+    create_user_id,
 )
+import numpy as np
+from datetime import datetime
+from azure.storage.fileshare import ShareServiceClient
+
 
 system_template = {"role": "system", "content": os.environ["content"]}
 
@@ -19,6 +23,7 @@ retrieve_all = EmbeddingRetriever(
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
 )
+
 retrieve_giec = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
         index_path="./documents/climate_gpt_only_giec.faiss",
@@ -28,9 +33,23 @@ retrieve_giec = EmbeddingRetriever(
     model_format="sentence_transformers",
 )
 
+credential = {
+    "account_key": os.environ["account_key"],
+    "account_name": os.environ["account_name"],
+}
+
+account_url = os.environ["account_url"]
+file_share_name = "climategpt"
+service = ShareServiceClient(account_url=account_url, credential=credential)
+share_client = service.get_share_client(file_share_name)
+
 
 def chat(
-    query: str, history: list = [system_template], report_type: str = "All available", threshold: float = 0.559
+    user_id: str,
+    query: str,
+    history: list = [system_template],
+    report_type: str = "All available",
+    threshold: float = 0.559,
 ) -> tuple:
     """retrieve relevant documents in the document store then query gpt-turbo
 
@@ -61,7 +80,9 @@ def chat(
     )
 
     if sources:
-        messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
+        messages.append(
+            {"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"}
+        )
 
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
@@ -75,11 +96,22 @@ def chat(
         complete_response = ""
     else:
         sources = "No environmental report was used to provide this answer."
-        complete_response = (
-            "No relevant documents found, for a sourced answer you may want to try a more specific question.\n\n"
-        )
+        complete_response = "No relevant documents found, for a sourced answer you may want to try a more specific question.\n\n"
 
     messages.append({"role": "assistant", "content": complete_response})
+    timestamp = str(datetime.now().timestamp())
+    file = user_id[0] + timestamp + ".json"
+    logs = {
+        "user_id": user_id[0],
+        "prompt": query,
+        "retrived": sources,
+        "report_type": report_type,
+        "prompt_eng": messages[0],
+        "answer": messages[-1]["content"],
+        "time": timestamp,
+    }
+    log_on_azure(file, logs, share_client)
+
     for chunk in response:
         if chunk_message := chunk["choices"][0]["delta"].get("content", None):
             complete_response += chunk_message
@@ -88,12 +120,26 @@ def chat(
             yield gradio_format, messages, sources
 
 
-def test(feed: str):
-    print(feed)
+def save_feedback(feed: str, user_id):
+    if len(feed) > 1:
+        timestamp = str(datetime.now().timestamp())
+        file = user_id[0] + timestamp + ".json"
+        logs = {
+            "user_id": user_id[0],
+            "feedback": feed,
+            "time": timestamp,
+        }
+        log_on_azure(file, logs, share_client)
+        return "Thanks for your feedbacks"
 
 
 def reset_textbox():
     return gr.update(value="")
+
+
+def log_on_azure(file, logs, share_client):
+    file_client = share_client.get_file_client(file)
+    file_client.upload_file(str(logs))
 
 
 # Gradio
@@ -102,7 +148,8 @@ css_code = ".gradio-container {background-image: url('file=background.png');back
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
     openai.api_key = os.environ["api_key"]
-    user_id = gr.State([get_random_string(10)])
+    user_id = create_user_id(10)
+    user_id_state = gr.State([user_id])
 
     with gr.Tab("App"):
         gr.Markdown("# Welcome to Climate GPT 🌍 !")
@@ -124,15 +171,16 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
                         placeholder="Enter text and press enter",
                         sample_inputs=["which country polutes the most ?"],
                     ).style(container=False)
-                    print(f"Type from ask textbox {ask.type}")
 
             with gr.Column(scale=1, variant="panel"):
                 gr.Markdown("### Sources")
-                sources_textbox = gr.Textbox(interactive=False, show_label=False, max_lines=50)
-
+                sources_textbox = gr.Textbox(
+                    interactive=False, show_label=False, max_lines=50
+                )
         ask.submit(
             fn=chat,
             inputs=[
+                user_id_state,
                 ask,
                 state,
                 gr.inputs.Dropdown(
@@ -149,7 +197,11 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
             gr.Markdown("Please complete some feedbacks 🙏")
             feedback = gr.Textbox()
             feedback_save = gr.Button(value="submit feedback")
-            feedback_save.click(test, inputs=[feedback])
+            # thanks = gr.Textbox()
+            feedback_save.click(
+                save_feedback,
+                inputs=[feedback, user_id_state],  # outputs=[thanks]
+            )
 
         with gr.Accordion("Add your personal openai api key - Option", open=False):
             openai_api_key_textbox = gr.Textbox(
@@ -158,8 +210,12 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
                 lines=1,
                 type="password",
             )
-        openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
-        openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
+        openai_api_key_textbox.change(
+            set_openai_api_key, inputs=[openai_api_key_textbox]
+        )
+        openai_api_key_textbox.submit(
+            set_openai_api_key, inputs=[openai_api_key_textbox]
+        )
 
     with gr.Tab("Information"):
         gr.Markdown(
