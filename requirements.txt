@@ -2,3 +2,4 @@ faiss-cpu==1.7.2
 farm-haystack==1.14.0
 gradio==3.22.1
 openai==0.27.0
+zure-storage-file-share==12.11.1
