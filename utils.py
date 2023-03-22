@@ -59,3 +59,11 @@ def create_user_id(length):
     letters = string.ascii_lowercase
     user_id = "".join(random.choice(letters) for i in range(length))
     return user_id
+
+
+def to_completion(messages):
+    s = []
+    for message in messages:
+        s.append(f"<|im_start|>{message['role']}\n{message['content']}<|im_end|>")
+    s.append("<|im_start|>assistant\n")
+    return "\n".join(s)

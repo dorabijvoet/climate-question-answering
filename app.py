@@ -7,6 +7,7 @@ from utils import (
     make_pairs,
     set_openai_api_key,
     create_user_id,
+    to_completion,
 )
 import numpy as np
 from datetime import datetime
@@ -14,6 +15,11 @@ from azure.storage.fileshare import ShareServiceClient
 
 
 system_template = {"role": "system", "content": os.environ["content"]}
+
+openai.api_type = "azure"
+openai.api_key = os.environ["api_key"]
+openai.api_base = os.environ["ressource_endpoint"]
+openai.api_version = "2022-12-01"
 
 retrieve_all = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
@@ -49,7 +55,7 @@ def chat(
     query: str,
     history: list = [system_template],
     report_type: str = "All available",
-    threshold: float = 0.559,
+    threshold: float = 0.555,
 ) -> tuple:
     """retrieve relevant documents in the document store then query gpt-turbo
 
@@ -80,23 +86,24 @@ def chat(
     )
 
     if sources:
-        messages.append(
-            {"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"}
-        )
+        messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
+    response = openai.Completion.create(
+        engine="climateGPT",
+        # messages=messages,
+        prompt=to_completion(messages),
         temperature=0.2,
         stream=True,
     )
 
     if sources:
-        messages.pop()
         complete_response = ""
+        messages.pop()
     else:
         sources = "No environmental report was used to provide this answer."
-        complete_response = "No relevant documents found, for a sourced answer you may want to try a more specific question.\n\n"
+        complete_response = (
+            "No relevant documents found, for a sourced answer you may want to try a more specific question.\n\n"
+        )
 
     messages.append({"role": "assistant", "content": complete_response})
     timestamp = str(datetime.now().timestamp())
@@ -113,7 +120,8 @@ def chat(
     log_on_azure(file, logs, share_client)
 
     for chunk in response:
-        if chunk_message := chunk["choices"][0]["delta"].get("content", None):
+        # if chunk_message := chunk["choices"][0]["delta"].get("content"):
+        if (chunk_message := chunk["choices"][0].get("text")) and chunk_message != "<|im_end|>":
             complete_response += chunk_message
             messages[-1]["content"] = complete_response
             gradio_format = make_pairs([a["content"] for a in messages[1:]])
@@ -144,10 +152,8 @@ def log_on_azure(file, logs, share_client):
 
 # Gradio
 css_code = ".gradio-container {background-image: url('file=background.png');background-position: top right}"
-
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
-    openai.api_key = os.environ["api_key"]
     user_id = create_user_id(10)
     user_id_state = gr.State([user_id])
 
@@ -174,9 +180,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
 
             with gr.Column(scale=1, variant="panel"):
                 gr.Markdown("### Sources")
-                sources_textbox = gr.Textbox(
-                    interactive=False, show_label=False, max_lines=50
-                )
+                sources_textbox = gr.Textbox(interactive=False, show_label=False, max_lines=50)
         ask.submit(
             fn=chat,
             inputs=[
@@ -210,12 +214,8 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
                 lines=1,
                 type="password",
             )
-        openai_api_key_textbox.change(
-            set_openai_api_key, inputs=[openai_api_key_textbox]
-        )
-        openai_api_key_textbox.submit(
-            set_openai_api_key, inputs=[openai_api_key_textbox]
-        )
+        openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
+        openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
     with gr.Tab("Information"):
         gr.Markdown(
