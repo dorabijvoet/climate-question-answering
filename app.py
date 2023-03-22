@@ -94,6 +94,7 @@ def chat(
         prompt=to_completion(messages),
         temperature=0.2,
         stream=True,
+        max_tokens=1024,
     )
 
     if sources:
