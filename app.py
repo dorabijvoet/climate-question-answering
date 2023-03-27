@@ -154,7 +154,6 @@ def log_on_azure(file, logs, share_client):
 # Gradio
 css_code = ".gradio-container {background-image: url('file=background.png');background-position: top right}"
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
-
     user_id = create_user_id(10)
     user_id_state = gr.State([user_id])
 
@@ -163,7 +162,7 @@ with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
         gr.Markdown(
             """ Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
             \n **How does it work:** when a user sends a message, the system retrieves the most relevant paragraphs from scientific reports that are semantically related to the user's question. These paragraphs are then used to generate a comprehensive and well-sourced answer using a language model.
-            \n **Usage guideline:** more sources will be retrieved using precise questions.
+            \n **Usage guideline:** the more specific your questions, the more relevant will the documents retrieved be.
             \n ⚠️ Always refer to the source to ensure the validity of the information communicated.
             """
         )
