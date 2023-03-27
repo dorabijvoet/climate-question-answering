@@ -90,7 +90,6 @@ def chat(
 
     response = openai.Completion.create(
         engine="climateGPT",
-        # messages=messages,
         prompt=to_completion(messages),
         temperature=0.2,
         stream=True,
@@ -121,7 +120,6 @@ def chat(
     log_on_azure(file, logs, share_client)
 
     for chunk in response:
-        # if chunk_message := chunk["choices"][0]["delta"].get("content"):
         if (chunk_message := chunk["choices"][0].get("text")) and chunk_message != "<|im_end|>":
             complete_response += chunk_message
             messages[-1]["content"] = complete_response
