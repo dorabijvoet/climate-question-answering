@@ -293,24 +293,18 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             ### Feedbacks
                     """
             )
-    with gr.Row():
-        with gr.Column():
             feedback = gr.Textbox(label="Write your feedback here")
-        with gr.Column(scale=1):
             feedback_output = gr.Textbox(label="Submit status")
-    with gr.Row():
-        feedback_save = gr.Button(value="submit feedback")
-        feedback_save.click(
-            save_feedback,
-            inputs=[feedback, user_id_state],
-            outputs=feedback_output,
-        )
-    with gr.Row():
-        gr.Markdown(
-            "If you need us to ask another climate science report or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>"
-        )
+            feedback_save = gr.Button(value="submit feedback")
+            feedback_save.click(
+                save_feedback,
+                inputs=[feedback, user_id_state],
+                outputs=feedback_output,
+            )
+            gr.Markdown(
+                "If you need us to ask another climate science report or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>"
+            )
 
-    with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("## OpenAI API")
             gr.Markdown(
