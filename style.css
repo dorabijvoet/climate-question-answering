@@ -1,0 +1,37 @@
+.warning-box {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 4px;
+    padding: 15px 20px;
+    font-size: 14px;
+    color: #856404;
+    display: inline-block;
+    margin-bottom: 15px;
+  }
+
+
+.tip-box {
+    background-color: #e0f7fa;
+    border: 1px solid #80deea;
+    border-radius: 4px;
+    margin-top:20px;
+    padding: 15px 20px;
+    font-size: 14px;
+    color: #006064;
+    display: inline-block;
+    margin-bottom: 15px;
+    width: auto;
+}
+
+.tip-box-title {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.light-bulb {
+    display: inline;
+    margin-right: 5px;
+}
+
+.gr-box {border-color: #d6c37c}
