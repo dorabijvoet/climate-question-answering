@@ -154,6 +154,8 @@ def log_on_azure(file, logs, share_client):
 
 with gr.Blocks(title="🌍 ClimateGPT", css="style.css") as demo:
 
+    user_id_state = gr.State([user_id])
+    
     # Gradio
     gr.Markdown("<h1><center>ClimateGPT 🌍</center></h1>")
     gr.Markdown("<h4><center>Ask climate-related questions to the IPCC reports</center></h4>")
@@ -270,32 +272,35 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
     )
     ask.submit(reset_textbox, [], [ask])
 
-    with gr.Accordion("Submit here your feedbacks and feature requests🙏", open=False):
-        gr.Markdown("""
-## Beta test
-
-- ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
-- Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
-- To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.
-
-## Feedbacks
-        """)
+    with gr.Row():
+        with gr.Column(scale = 1):
+            with gr.Accordion("🙏 Submit here your feedbacks and feature requests", open=True):
+                gr.Markdown("""
+        ## Beta test
         
-        feedback = gr.Textbox()
-        feedback_save = gr.Button(value="submit feedback")
-        # thanks = gr.Textbox()
-        feedback_save.click(
-            save_feedback,
-            inputs=[feedback, user_id_state],  # outputs=[thanks]
-        )
+        - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
+        - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
+        - To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.
+        
+        ## Feedbacks
+                """)
+                
+                feedback = gr.Textbox()
+                feedback_save = gr.Button(value="submit feedback")
+                # thanks = gr.Textbox()
+                feedback_save.click(
+                    save_feedback,
+                    inputs=[feedback, user_id_state],  # outputs=[thanks]
+                )
 
-    with gr.Accordion("Add your personal openai api key - Optional (see beta-test section below)", open=False):
-        openai_api_key_textbox = gr.Textbox(
-            placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
-            show_label=False,
-            lines=1,
-            type="password",
-        )
+        with gr.Column(scale = 1):
+            with gr.Accordion("Add your personal openai api key - Optional (see beta-test section on the right)", open=False):
+                openai_api_key_textbox = gr.Textbox(
+                    placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+                    show_label=False,
+                    lines=1,
+                    type="password",
+                )
     openai_api_key_textbox.change(
         set_openai_api_key, inputs=[openai_api_key_textbox]
     )
@@ -306,7 +311,7 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
     gr.Markdown("""
 
 
-## Sources
+## 📚 Sources
 | Source | Report | URL | Number of pages | Release date |
 | --- | --- | --- | --- | --- |
 | IPCC | IPCC AR6 - First Assessment Report on the Physical Science of Climate Change | https://report.ipcc.ch/ar6/wg1/IPCC_AR6_WGI_FullReport.pdf | 2049 pages | August 2021 |
@@ -324,7 +329,7 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
 | IEA | Word Energy Outlook 2022 | https://www.iea.org/reports/world-energy-outlook-2022 | 524 pages | October 2022 |
 | EU parliament | The environmental impacts of plastics and micro plastics use, waste and polution EU and national measures | https://www.europarl.europa.eu/thinktank/en/document/IPOL_STU(2020)658279 | 76 pages | October 2020 |
 
-## Carbon Footprint
+## 🛢️ Carbon Footprint
 
 Carbon emissions were measured during the development and inference process using CodeCarbon [https://github.com/mlco2/codecarbon](https://github.com/mlco2/codecarbon)
 
@@ -335,8 +340,10 @@ Carbon emissions were measured during the development and inference process usin
 | Inference | Question Answering | x kgCO2 / call | CodeCarbon |
 | Inference | API call to turbo-GPT | x kgCO2 / call | OpenAI |
 
-## Authors
-- Ekimetrics
+## 📧 Contact 
+This tool has been developed by the R&D lab at **Ekimetrics**
+
+If you have any questions or feature requests, please feel free to reach us out at <b>theo.alvesdacosta@ekimetrics.com</b>.
 """)
     
     demo.queue(concurrency_count=16)
