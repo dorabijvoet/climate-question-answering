@@ -103,8 +103,8 @@ def chat(
         complete_response = ""
         messages.pop()
     else:
-        sources = "No environmental report was used to provide this answer."
-        complete_response = "No relevant documents found, for a sourced answer you may want to try a more specific question.\n\n"
+        sources = "No climate science report was used to provide this answer."
+        complete_response = "No relevant documents found in the climate science reports, for a sourced answer you may want to try a more specific question.\n\n"
 
     messages.append({"role": "assistant", "content": complete_response})
     timestamp = str(datetime.now().timestamp())
@@ -157,99 +157,133 @@ css_code = ".gradio-container {background-image: url('file=background.png');back
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
     user_id_state = gr.State([user_id])
 
-    with gr.Tab("App"):
-        gr.Markdown("# Welcome to Climate GPT 🌍 !")
-        gr.Markdown(
-            """ Climate GPT is an interactive exploration tool designed to help you easily find relevant information based on  of Environmental reports such as IPCCs and other environmental reports.
-            \n **How does it work:** when a user sends a message, the system retrieves the most relevant paragraphs from scientific reports that are semantically related to the user's question. These paragraphs are then used to generate a comprehensive and well-sourced answer using a language model.
-            \n **Usage guideline:** the more specific your questions, the more relevant will the documents retrieved be.
-            \n ⚠️ Always refer to the source to ensure the validity of the information communicated.
-            """
-        )
-        with gr.Row():
-            with gr.Column(scale=2):
-                chatbot = gr.Chatbot(elem_id="chatbot")
-                state = gr.State([system_template])
-
-                with gr.Row():
-                    ask = gr.Textbox(
-                        show_label=False,
-                        placeholder="Enter text and press enter",
-                        sample_inputs=["which country polutes the most ?"],
-                    ).style(container=False)
-
-            with gr.Column(scale=1, variant="panel"):
-                gr.Markdown("### Sources")
-                sources_textbox = gr.Textbox(
-                    interactive=False, show_label=False, max_lines=50
-                )
-        ask.submit(
-            fn=chat,
-            inputs=[
-                user_id_state,
-                ask,
-                state,
-                gr.inputs.Dropdown(
-                    ["IPCC only", "All available"],
-                    default="All available",
-                    label="Select reports",
-                ),
-            ],
-            outputs=[chatbot, state, sources_textbox],
-        )
-        ask.submit(reset_textbox, [], [ask])
-
-        with gr.Accordion("Feedbacks", open=False):
-            gr.Markdown("Please complete some feedbacks 🙏")
-            feedback = gr.Textbox()
-            feedback_save = gr.Button(value="submit feedback")
-            # thanks = gr.Textbox()
-            feedback_save.click(
-                save_feedback,
-                inputs=[feedback, user_id_state],  # outputs=[thanks]
-            )
-
-        with gr.Accordion("Add your personal openai api key - Option", open=False):
-            openai_api_key_textbox = gr.Textbox(
-                placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
-                show_label=False,
-                lines=1,
-                type="password",
-            )
-        openai_api_key_textbox.change(
-            set_openai_api_key, inputs=[openai_api_key_textbox]
-        )
-        openai_api_key_textbox.submit(
-            set_openai_api_key, inputs=[openai_api_key_textbox]
-        )
-
-    with gr.Tab("Information"):
-        gr.Markdown(
-            """
-        ## 📖 Reports used : \n
-        - First Assessment Report on the Physical Science of Climate Change
-        - Second assessment Report on Climate Change Adaptation
-        - Third Assessment Report on Climate Change Mitigation
-        - Food Outlook Biannual Report on Global Food Markets
-        - IEA's report on the Role of Critical Minerals in Clean Energy Transitions
-        - Limits to Growth
-        - Outside The Safe operating system of the Planetary Boundary for Novel Entities
-        - Planetary Boundaries Guiding
-        - State of the Oceans report
-        - Word Energy Outlook 2021
-        - Word Energy Outlook 2022
-        - The environmental impacts of plastics and micro plastics use, waste and polution ET=U and national measures
-        - IPBES Global report - MArch 2022
-
-        \n
-        IPCC is a United Nations body that assesses the science related to climate change, including its impacts and possible response options. 
-        The IPCC is considered the leading scientific authority on all things related to global climate change.
-
+    gr.Markdown("# Welcome to Climate.GPT 🌍 !")
+    gr.Markdown(
         """
-        )
-    with gr.Tab("Examples"):
-        gr.Markdown("See here some examples on how to use the Chatbot")
+Climate change and environmental disruptions have become some of the most pressing challenges facing our planet today. As global temperatures rise and ecosystems suffer, it is essential for individuals to understand the gravity of the situation in order to make informed decisions and advocate for appropriate policy changes. 
 
+However, comprehending the vast and complex scientific information can be daunting, as the scientific consensus references, such as the Intergovernmental Panel on Climate Change (IPCC) reports, span thousands of pages and are often laden with technical jargon. To bridge this gap and make climate science more accessible, we introduce ClimateGPT as a tool to distill expert-level knowledge into easily digestible insights about climate science.
+
+ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, ClimateGPT is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries. Furthermore, the integration of the ChatGPT API allows ClimateGPT to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This innovative chatbot effectively puts a climate expert in your pocket, empowering you to engage with crucial environmental issues in a more informed and meaningful way.
+## How to use Climate GPT
+
+### Getting started
+
+- In the chatbot section, simply type your climate-related question, and ClimateGPT will provide an answer with references to relevant IPCC reports.
+    - ClimateGPT retrieves specific passages from the IPCC reports to help answer your question accurately.
+    - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
+    - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
+- ClimateGPT integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
+
+### Limitations
+
+- Currently available in English only.
+- ⚠️ Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.
+- ClimateGPT is specifically designed for climate-related inquiries. If you ask a non-environmental question, the chatbot will politely remind you that its focus is on climate and environmental issues.
+"""
+    )
+    with gr.Row():
+        with gr.Column(scale=2):
+            chatbot = gr.Chatbot(elem_id="chatbot")
+            state = gr.State([system_template])
+
+            with gr.Row():
+                ask = gr.Textbox(
+                    show_label=False,
+                    placeholder="Ask here your climate-related question and press enter",
+                    sample_inputs=["which country polutes the most ?"],
+                ).style(container=False)
+
+        with gr.Column(scale=1, variant="panel"):
+            gr.Markdown("### Sources")
+            sources_textbox = gr.Textbox(
+                interactive=False, show_label=False, max_lines=50
+            )
+    ask.submit(
+        fn=chat,
+        inputs=[
+            user_id_state,
+            ask,
+            state,
+            gr.inputs.Dropdown(
+                ["IPCC only", "All available"],
+                default="All available",
+                label="Select reports",
+            ),
+        ],
+        outputs=[chatbot, state, sources_textbox],
+    )
+    ask.submit(reset_textbox, [], [ask])
+
+    with gr.Accordion("Submit here your feedbacks and feature requests🙏", open=False):
+        gr.Markdown("""
+## Beta test
+
+- ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
+- Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
+- To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.
+
+## Feedbacks
+        """)
+        
+        feedback = gr.Textbox()
+        feedback_save = gr.Button(value="submit feedback")
+        # thanks = gr.Textbox()
+        feedback_save.click(
+            save_feedback,
+            inputs=[feedback, user_id_state],  # outputs=[thanks]
+        )
+
+    with gr.Accordion("Add your personal openai api key - Optional (see beta-test section below)", open=False):
+        openai_api_key_textbox = gr.Textbox(
+            placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+            show_label=False,
+            lines=1,
+            type="password",
+        )
+    openai_api_key_textbox.change(
+        set_openai_api_key, inputs=[openai_api_key_textbox]
+    )
+    openai_api_key_textbox.submit(
+        set_openai_api_key, inputs=[openai_api_key_textbox]
+    )
+
+    gr.Markdown("""
+
+
+## Sources
+
+| IPCC | IPCC AR6 - First Assessment Report on the Physical Science of Climate Change | https://report.ipcc.ch/ar6/wg1/IPCC_AR6_WGI_FullReport.pdf | 2049 pages | August 2021 |
+| --- | --- | --- | --- | --- |
+| IPCC | IPCC AR6 - Second Assessment Report on Climate Change Adaptation | https://report.ipcc.ch/ar6/wg2/IPCC_AR6_WGII_FullReport.pdf | 3068 pages | February 2022 |
+| IPCC | IPCC AR6 - Third Assessment Report on Climate Change Mitigation | https://www.ipcc.ch/report/ar6/wg3/downloads/report/IPCC_AR6_WGIII_FullReport.pdf | 2258 pages | April 2022 |
+| IPCC | IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6) | https://report.ipcc.ch/ar6syr/pdf/IPCC_AR6_SYR_SPM.pdf | 36 pages | March 2023 |
+| IPBES | IPBES Global report on Biodiversity - March 2022 | https://www.ipbes.net/global-assessment | 1148 pages | June 2022 |
+| FAO | Food Outlook Biannual Report on Global Food Markets | https://www.fao.org/documents/card/en/c/cb9427en | 174 pages | June 2022 |
+| IEA | IEA’s report on the Role of Critical Minerals in Clean Energy Transitions | https://www.iea.org/reports/the-role-of-critical-minerals-in-clean-energy-transitions | 287 pages | May 2021 |
+| Club de Rome | Limits to Growth | https://www.donellameadows.org/wp-content/userfiles/Limits-to-Growth-digital-scan-version.pdf | 211 pages | 1972 |
+|  | Outside The Safe operating system of the Planetary Boundary for Novel Entities | https://pubs.acs.org/doi/10.1021/acs.est.1c04158 | 12 pages | January 2022 |
+|  | Planetary boundaries: Guiding human development on a changing planet | https://www.science.org/doi/10.1126/science.1259855 | 11 pages | February 2015 |
+| UNFCCC | State of the Oceans report | https://unfccc.int/documents/568128 | 75 pages | August 2022 |
+| IEA | Word Energy Outlook 2021 | https://www.iea.org/reports/world-energy-outlook-2021 | 386 pages | October 2021 |
+| IEA | Word Energy Outlook 2022 | https://www.iea.org/reports/world-energy-outlook-2022 | 524 pages | October 2022 |
+| EU parliament | The environmental impacts of plastics and micro plastics use, waste and polution EU and national measures | https://www.europarl.europa.eu/thinktank/en/document/IPOL_STU(2020)658279 | 76 pages | October 2020 |
+
+## Carbon Footprint
+
+Carbon emissions were measured during the development and inference process using CodeCarbon [https://github.com/mlco2/codecarbon](https://github.com/mlco2/codecarbon)
+
+| Phase | Description | Emissions | Source |
+| --- | --- | --- | --- |
+| Development  | OCR and parsing all pdf documents with AI | x kgCO2 | CodeCarbon |
+| Development | Question Answering development | x kgCO2 | CodeCarbon |
+| Inference | Question Answering | x kgCO2 / call | CodeCarbon |
+| Inference | API call to turbo-GPT | x kgCO2 / call | OpenAI |
+
+## Authors
+- Ekimetrics
+""")
+    
     demo.queue(concurrency_count=16)
 
 demo.launch()
