@@ -281,16 +281,16 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
     """
             )
 
-    with gr.Row():
-        gr.Markdown("## 🙏 Feedback and feature requests")
-        gr.Markdown(
-            """
-        ### Beta test
-        - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
-        - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
-        - Only a few sources (see below) are integrated (all IPCC, IPBES, IEA recent reports), if you are a climate science researcher and net to sift through another report, please let us know.
+    gr.Markdown("## 🙏 Feedback and feature requests")
+    gr.Markdown(
         """
-        )
+    ### Beta test
+    - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
+    - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
+    - Only a few sources (see below) are integrated (all IPCC, IPBES, IEA recent reports), if you are a climate science researcher and net to sift through another report, please let us know.
+    """
+    )
+    with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown("### Feedbacks")
             feedback = gr.Textbox(label="Write your feedback here")
