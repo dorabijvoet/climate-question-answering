@@ -180,30 +180,6 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             gr.Markdown("*Source : IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6)*")
             
 
-    gr.Markdown("## How to use ClimateGPT")
-    with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("""
-    ### 💪 Getting started
-    - In the chatbot section, simply type your climate-related question, and ClimateGPT will provide an answer with references to relevant IPCC reports.
-        - ClimateGPT retrieves specific passages from the IPCC reports to help answer your question accurately.
-        - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
-        - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
-    - ClimateGPT integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
-    """
-        )
-        with gr.Column(scale=1):
-
-            gr.Markdown("""
-    ### ⚠️ Limitations
-    <div class="warning-box">
-    <ul>
-        <li>Currently available in English only.</li>
-        <li>Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.</li>
-        <li>ClimateGPT is specifically designed for climate-related inquiries. If you ask a non-environmental question, the chatbot will politely remind you that its focus is on climate and environmental issues.</li>
-    </div>
-    """
-            )
     with gr.Row():
         with gr.Column(scale=2):
             chatbot = gr.Chatbot(elem_id="chatbot")
@@ -272,35 +248,63 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
     )
     ask.submit(reset_textbox, [], [ask])
 
+    gr.Markdown("## How to use ClimateGPT")
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("""
+    ### 💪 Getting started
+    - In the chatbot section, simply type your climate-related question, and ClimateGPT will provide an answer with references to relevant IPCC reports.
+        - ClimateGPT retrieves specific passages from the IPCC reports to help answer your question accurately.
+        - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
+        - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
+    - ClimateGPT integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
+    """
+        )
+        with gr.Column(scale=1):
+
+            gr.Markdown("""
+    ### ⚠️ Limitations
+    <div class="warning-box">
+    <ul>
+        <li>Currently available in English only.</li>
+        <li>Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.</li>
+        <li>ClimateGPT is specifically designed for climate-related inquiries. If you ask a non-environmental question, the chatbot will politely remind you that its focus is on climate and environmental issues.</li>
+    </div>
+    """
+            )
+            
     with gr.Row():
         with gr.Column(scale = 1):
-            with gr.Accordion("🙏 Submit here your feedbacks and feature requests", open=True):
-                gr.Markdown("""
-        ## Beta test
-        
-        - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
-        - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
-        - To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.
-        
-        ## Feedbacks
-                """)
+            gr.Markdown("## 🙏 Feedback and feature requests")
+            gr.Markdown("""
+            ### Beta test
+            
+            - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
+            - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
+            - To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.
+            
+            ### Feedbacks
+                    """)
                 
-                feedback = gr.Textbox()
-                feedback_save = gr.Button(value="submit feedback")
-                # thanks = gr.Textbox()
-                feedback_save.click(
-                    save_feedback,
-                    inputs=[feedback, user_id_state],  # outputs=[thanks]
-                )
+            feedback = gr.Textbox()
+            feedback_save = gr.Button(value="submit feedback")
+            # thanks = gr.Textbox()
+            feedback_save.click(
+                save_feedback,
+                inputs=[feedback, user_id_state],  # outputs=[thanks]
+            )
+            gr.Markdown("If you need us to ask another climate science document or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>")
+            
 
         with gr.Column(scale = 1):
-            with gr.Accordion("Add your personal openai api key - Optional (see beta-test section on the right)", open=False):
-                openai_api_key_textbox = gr.Textbox(
-                    placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
-                    show_label=False,
-                    lines=1,
-                    type="password",
-                )
+            gr.Markdown("## API")
+            gr.Accordion("Add your personal openai api key - Optional (see beta-test section on the right)", open=False):
+            openai_api_key_textbox = gr.Textbox(
+                placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+                show_label=False,
+                lines=1,
+                type="password",
+            )
     openai_api_key_textbox.change(
         set_openai_api_key, inputs=[openai_api_key_textbox]
     )
@@ -341,7 +345,7 @@ Carbon emissions were measured during the development and inference process usin
 | Inference | API call to turbo-GPT | x kgCO2 / call | OpenAI |
 
 ## 📧 Contact 
-This tool has been developed by the R&D lab at **Ekimetrics**
+This tool has been developed by the R&D lab at **Ekimetrics** (Jean Lelong, Nina Achache, Gabriel Olympie, Nicolas Chesneau, Natalia De la Calzada, Théo Alves Da Costa)
 
 If you have any questions or feature requests, please feel free to reach us out at <b>theo.alvesdacosta@ekimetrics.com</b>.
 """)
