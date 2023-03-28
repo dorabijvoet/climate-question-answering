@@ -278,11 +278,9 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             gr.Markdown("## 🙏 Feedback and feature requests")
             gr.Markdown("""
             ### Beta test
-            
             - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
             - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
-            - To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.
-            
+            - Only a few sources (see below) are integrated (all IPCC, IPBES, IEA recent reports), if you are a climate science researcher and net to sift through another report, please let us know.
             ### Feedbacks
                     """)
                 
@@ -293,12 +291,12 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
                 save_feedback,
                 inputs=[feedback, user_id_state],  # outputs=[thanks]
             )
-            gr.Markdown("If you need us to ask another climate science document or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>")
+            gr.Markdown("If you need us to ask another climate science report or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>")
             
 
         with gr.Column(scale = 1):
-            gr.Markdown("## API")
-            gr.Accordion("Add your personal openai api key - Optional (see beta-test section on the right)", open=False):
+            gr.Markdown("## OpenAI API")
+            gr.Markdown("To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.")
             openai_api_key_textbox = gr.Textbox(
                 placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
                 show_label=False,
