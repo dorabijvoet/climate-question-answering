@@ -282,17 +282,17 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             )
 
     with gr.Row():
+        gr.Markdown("## 🙏 Feedback and feature requests")
+        gr.Markdown(
+            """
+        ### Beta test
+        - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
+        - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
+        - Only a few sources (see below) are integrated (all IPCC, IPBES, IEA recent reports), if you are a climate science researcher and net to sift through another report, please let us know.
+        """
+        )
         with gr.Column(scale=1):
-            gr.Markdown("## 🙏 Feedback and feature requests")
-            gr.Markdown(
-                """
-            ### Beta test
-            - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
-            - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
-            - Only a few sources (see below) are integrated (all IPCC, IPBES, IEA recent reports), if you are a climate science researcher and net to sift through another report, please let us know.
-            ### Feedbacks
-                    """
-            )
+            gr.Markdown("### Feedbacks")
             feedback = gr.Textbox(label="Write your feedback here")
             feedback_output = gr.Textbox(label="Submit status")
             feedback_save = gr.Button(value="submit feedback")
@@ -306,7 +306,7 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             )
 
         with gr.Column(scale=1):
-            gr.Markdown("## OpenAI API")
+            gr.Markdown("### OpenAI API")
             gr.Markdown(
                 "To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others."
             )
