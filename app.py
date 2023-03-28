@@ -201,7 +201,7 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
                     "What are the impacts of climate change?",
                     "Can climate change be reversed?",
                     "What is the difference between climate change and global warming?",
-                    "What can individuals do to address climate change?",
+                    "What can individuals do to address climate change? Answer with bullet points",
                     "What evidence do we have of climate change?",
                     "What is the Paris Agreement and why is it important?",
                     "Which industries have the highest GHG emissions?",
