@@ -153,7 +153,7 @@ def log_on_azure(file, logs, share_client):
 
 
 # Gradio
-css_code = ".gradio-container {background-image: url('file=background_test.jpg');background-position: top right}"
+css_code = ".gradio-container {background-image: url('file=background.jpg');background-position: top right}"
 with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
     user_id_state = gr.State([user_id])
 
