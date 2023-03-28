@@ -152,36 +152,56 @@ def log_on_azure(file, logs, share_client):
     file_client.upload_file(str(logs))
 
 
-# Gradio
-css_code = ".gradio-container {background-image: url('file=background.png');background-position: top right}"
-with gr.Blocks(title="🌍 ClimateGPT Ekimetrics", css=css_code) as demo:
-    user_id_state = gr.State([user_id])
+with gr.Blocks(title="🌍 ClimateGPT", css="style.css") as demo:
 
-    gr.Markdown("# Welcome to Climate.GPT 🌍 !")
-    gr.Markdown(
-        """
-Climate change and environmental disruptions have become some of the most pressing challenges facing our planet today. As global temperatures rise and ecosystems suffer, it is essential for individuals to understand the gravity of the situation in order to make informed decisions and advocate for appropriate policy changes. 
+    # Gradio
+    gr.Markdown("<h1><center>ClimateGPT 🌍</center></h1>")
+    gr.Markdown("<h4><center>Ask climate-related questions to the IPCC reports</center></h4>")
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("""
+<p><b>Climate change and environmental disruptions have become some of the most pressing challenges facing our planet today</b>. As global temperatures rise and ecosystems suffer, it is essential for individuals to understand the gravity of the situation in order to make informed decisions and advocate for appropriate policy changes.</p>
+<p>However, comprehending the vast and complex scientific information can be daunting, as the scientific consensus references, such as <b>the Intergovernmental Panel on Climate Change (IPCC) reports, span thousands of pages</b> and are often laden with technical jargon. To bridge this gap and make climate science more accessible, we introduce <b>ClimateGPT as a tool to distill expert-level knowledge into easily digestible insights about climate science.</b></p>
+<div class="tip-box">
+<div class="tip-box-title">
+    <span class="light-bulb" role="img" aria-label="Light Bulb">💡</span>
+    How does ClimateGPT work?
+</div>
+ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateGPT is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateGPT to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This innovative chatbot effectively puts a climate expert in your pocket, empowering you to engage with crucial environmental issues in a more informed and meaningful way.
+</div>
 
-However, comprehending the vast and complex scientific information can be daunting, as the scientific consensus references, such as the Intergovernmental Panel on Climate Change (IPCC) reports, span thousands of pages and are often laden with technical jargon. To bridge this gap and make climate science more accessible, we introduce ClimateGPT as a tool to distill expert-level knowledge into easily digestible insights about climate science.
-
-ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, ClimateGPT is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries. Furthermore, the integration of the ChatGPT API allows ClimateGPT to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This innovative chatbot effectively puts a climate expert in your pocket, empowering you to engage with crucial environmental issues in a more informed and meaningful way.
-## How to use Climate GPT
-
-### Getting started
-
-- In the chatbot section, simply type your climate-related question, and ClimateGPT will provide an answer with references to relevant IPCC reports.
-    - ClimateGPT retrieves specific passages from the IPCC reports to help answer your question accurately.
-    - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
-    - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
-- ClimateGPT integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
-
-### Limitations
-
-- Currently available in English only.
-- ⚠️ Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.
-- ClimateGPT is specifically designed for climate-related inquiries. If you ask a non-environmental question, the chatbot will politely remind you that its focus is on climate and environmental issues.
 """
     )
+
+        with gr.Column(scale=1):
+            gr.Markdown("![](https://i.postimg.cc/fLvsvMzM/Untitled-design-5.png)")
+            gr.Markdown("*Source : IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6)*")
+            
+
+    gr.Markdown("## How to use ClimateGPT")
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("""
+    ### 💪 Getting started
+    - In the chatbot section, simply type your climate-related question, and ClimateGPT will provide an answer with references to relevant IPCC reports.
+        - ClimateGPT retrieves specific passages from the IPCC reports to help answer your question accurately.
+        - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
+        - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
+    - ClimateGPT integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
+    """
+        )
+        with gr.Column(scale=1):
+
+            gr.Markdown("""
+    ### ⚠️ Limitations
+    <div class="warning-box">
+    <ul>
+        <li>Currently available in English only.</li>
+        <li>Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.</li>
+        <li>ClimateGPT is specifically designed for climate-related inquiries. If you ask a non-environmental question, the chatbot will politely remind you that its focus is on climate and environmental issues.</li>
+    </div>
+    """
+            )
     with gr.Row():
         with gr.Column(scale=2):
             chatbot = gr.Chatbot(elem_id="chatbot")
@@ -287,9 +307,9 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
 
 
 ## Sources
-
-| IPCC | IPCC AR6 - First Assessment Report on the Physical Science of Climate Change | https://report.ipcc.ch/ar6/wg1/IPCC_AR6_WGI_FullReport.pdf | 2049 pages | August 2021 |
+| Source | Report | URL | Number of pages | Release date |
 | --- | --- | --- | --- | --- |
+| IPCC | IPCC AR6 - First Assessment Report on the Physical Science of Climate Change | https://report.ipcc.ch/ar6/wg1/IPCC_AR6_WGI_FullReport.pdf | 2049 pages | August 2021 |
 | IPCC | IPCC AR6 - Second Assessment Report on Climate Change Adaptation | https://report.ipcc.ch/ar6/wg2/IPCC_AR6_WGII_FullReport.pdf | 3068 pages | February 2022 |
 | IPCC | IPCC AR6 - Third Assessment Report on Climate Change Mitigation | https://www.ipcc.ch/report/ar6/wg3/downloads/report/IPCC_AR6_WGIII_FullReport.pdf | 2258 pages | April 2022 |
 | IPCC | IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6) | https://report.ipcc.ch/ar6syr/pdf/IPCC_AR6_SYR_SPM.pdf | 36 pages | March 2023 |
