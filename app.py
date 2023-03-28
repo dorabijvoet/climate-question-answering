@@ -347,10 +347,10 @@ Carbon emissions were measured during the development and inference process usin
 
 | Phase | Description | Emissions | Source |
 | --- | --- | --- | --- |
-| Development  | OCR and parsing all pdf documents with AI | x kgCO2 | CodeCarbon |
-| Development | Question Answering development | x kgCO2 | CodeCarbon |
-| Inference | Question Answering | x kgCO2 / call | CodeCarbon |
-| Inference | API call to turbo-GPT | x kgCO2 / call | OpenAI |
+| Development  | OCR and parsing all pdf documents with AI | 28gCO2e | CodeCarbon |
+| Development | Question Answering development | 114gCO2e | CodeCarbon |
+| Inference | Question Answering | TBD | CodeCarbon |
+| Inference | API call to turbo-GPT | 0.38gCO2e / call | OpenAI |
 
 ## 📧 Contact 
 This tool has been developed by the R&D lab at **Ekimetrics** (Jean Lelong, Nina Achache, Gabriel Olympie, Nicolas Chesneau, Natalia De la Calzada, Théo Alves Da Costa)
