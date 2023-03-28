@@ -140,7 +140,7 @@ def save_feedback(feed: str, user_id):
             "time": timestamp,
         }
         log_on_azure(file, logs, share_client)
-        return "Thanks for your feedbacks"
+        return "Feedback submitted, thank you!"
 
 
 def reset_textbox():
@@ -155,13 +155,16 @@ def log_on_azure(file, logs, share_client):
 with gr.Blocks(title="🌍 ClimateGPT", css="style.css") as demo:
 
     user_id_state = gr.State([user_id])
-    
+
     # Gradio
     gr.Markdown("<h1><center>ClimateGPT 🌍</center></h1>")
-    gr.Markdown("<h4><center>Ask climate-related questions to the IPCC reports</center></h4>")
+    gr.Markdown(
+        "<h4><center>Ask climate-related questions to the IPCC reports</center></h4>"
+    )
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("""
+            gr.Markdown(
+                """
 <p><b>Climate change and environmental disruptions have become some of the most pressing challenges facing our planet today</b>. As global temperatures rise and ecosystems suffer, it is essential for individuals to understand the gravity of the situation in order to make informed decisions and advocate for appropriate policy changes.</p>
 <p>However, comprehending the vast and complex scientific information can be daunting, as the scientific consensus references, such as <b>the Intergovernmental Panel on Climate Change (IPCC) reports, span thousands of pages</b> and are often laden with technical jargon. To bridge this gap and make climate science more accessible, we introduce <b>ClimateGPT as a tool to distill expert-level knowledge into easily digestible insights about climate science.</b></p>
 <div class="tip-box">
@@ -173,12 +176,13 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
 </div>
 
 """
-    )
+            )
 
         with gr.Column(scale=1):
             gr.Markdown("![](https://i.postimg.cc/fLvsvMzM/Untitled-design-5.png)")
-            gr.Markdown("*Source : IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6)*")
-            
+            gr.Markdown(
+                "*Source : IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6)*"
+            )
 
     with gr.Row():
         with gr.Column(scale=2):
@@ -191,42 +195,44 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
                     placeholder="Ask here your climate-related question and press enter",
                 ).style(container=False)
 
-            examples_questions = gr.Examples([
-                "What are the main causes of climate change?",
-                "What are the impacts of climate change?",
-                "Can climate change be reversed?",
-                "What is the difference between climate change and global warming?",
-                "What can individuals do to address climate change?",
-                "What evidence do we have of climate change?",
-                "What is the Paris Agreement and why is it important?",
-                "Which industries have the highest GHG emissions?",
-                "Is climate change caused by humans?",
-                "What are the different greenhouse gases (GHG)?",
-                "What is the warming power of methane?",
-                "What is the jet stream?",
-                "What is the breakdown of carbon sinks?",
-                "How do the GHGs work ? Why does temperature increase ?",
-                "What is the impact of global warming on ocean currents?",
-                "How much warming is possible in 2050?",
-                "What is the impact of climate change in Africa?",
-                "What is the impact of rising sea levels?",
-                "Will climate change accelerate diseases and epidemics like COVID?",
-                "What are the economic impacts of climate change?",
-                "What is the link between gender equality and climate change?",
-                "How much is the cost of inaction ?",
-                "What is the relationship between climate change and poverty?",
-                "What is the relationship between climate change and biodiversity loss?",
-                "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
-                "Is economic growth possible? What do you think about degrowth?",
-                "Will technology save us?",
-                "Is climate change a natural phenomenon ?",
-                "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
-                "Is the scientific consensus on climate change really as strong as it is claimed to be?",
-                "Is the impact of climate change really as severe as it is claimed to be?",
-                "Is climate change a hoax created by the government or environmental organizations?"
-            ],[ask])
+            examples_questions = gr.Examples(
+                [
+                    "What are the main causes of climate change?",
+                    "What are the impacts of climate change?",
+                    "Can climate change be reversed?",
+                    "What is the difference between climate change and global warming?",
+                    "What can individuals do to address climate change?",
+                    "What evidence do we have of climate change?",
+                    "What is the Paris Agreement and why is it important?",
+                    "Which industries have the highest GHG emissions?",
+                    "Is climate change caused by humans?",
+                    "What are the different greenhouse gases (GHG)?",
+                    "What is the warming power of methane?",
+                    "What is the jet stream?",
+                    "What is the breakdown of carbon sinks?",
+                    "How do the GHGs work ? Why does temperature increase ?",
+                    "What is the impact of global warming on ocean currents?",
+                    "How much warming is possible in 2050?",
+                    "What is the impact of climate change in Africa?",
+                    "What is the impact of rising sea levels?",
+                    "Will climate change accelerate diseases and epidemics like COVID?",
+                    "What are the economic impacts of climate change?",
+                    "What is the link between gender equality and climate change?",
+                    "How much is the cost of inaction ?",
+                    "What is the relationship between climate change and poverty?",
+                    "What is the relationship between climate change and biodiversity loss?",
+                    "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
+                    "Is economic growth possible? What do you think about degrowth?",
+                    "Will technology save us?",
+                    "Is climate change a natural phenomenon ?",
+                    "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
+                    "Is the scientific consensus on climate change really as strong as it is claimed to be?",
+                    "Is the impact of climate change really as severe as it is claimed to be?",
+                    "Is climate change a hoax created by the government or environmental organizations?",
+                ],
+                [ask],
+            )
 
-        
         with gr.Column(scale=1, variant="panel"):
             gr.Markdown("### Sources")
             sources_textbox = gr.Textbox(
@@ -251,7 +257,8 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
     gr.Markdown("## How to use ClimateGPT")
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("""
+            gr.Markdown(
+                """
     ### 💪 Getting started
     - In the chatbot section, simply type your climate-related question, and ClimateGPT will provide an answer with references to relevant IPCC reports.
         - ClimateGPT retrieves specific passages from the IPCC reports to help answer your question accurately.
@@ -259,10 +266,11 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
         - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
     - ClimateGPT integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
     """
-        )
+            )
         with gr.Column(scale=1):
 
-            gr.Markdown("""
+            gr.Markdown(
+                """
     ### ⚠️ Limitations
     <div class="warning-box">
     <ul>
@@ -272,45 +280,53 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
     </div>
     """
             )
-            
+
     with gr.Row():
-        with gr.Column(scale = 1):
+        with gr.Column(scale=1):
             gr.Markdown("## 🙏 Feedback and feature requests")
-            gr.Markdown("""
+            gr.Markdown(
+                """
             ### Beta test
             - ClimateGPT welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
             - Provide feedback through our feedback form, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
             - Only a few sources (see below) are integrated (all IPCC, IPBES, IEA recent reports), if you are a climate science researcher and net to sift through another report, please let us know.
             ### Feedbacks
-                    """)
-                
-            feedback = gr.Textbox()
-            feedback_save = gr.Button(value="submit feedback")
-            # thanks = gr.Textbox()
-            feedback_save.click(
-                save_feedback,
-                inputs=[feedback, user_id_state],  # outputs=[thanks]
+                    """
             )
-            gr.Markdown("If you need us to ask another climate science report or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>")
-            
+    with gr.Row():
+        with gr.Column():
+            feedback = gr.Textbox(label="Write your feedback here")
+        with gr.Column(scale=1):
+            feedback_output = gr.Textbox(label="Submit status")
+    with gr.Row():
+        feedback_save = gr.Button(value="submit feedback")
+        feedback_save.click(
+            save_feedback,
+            inputs=[feedback, user_id_state],
+            outputs=feedback_output,
+        )
+    with gr.Row():
+        gr.Markdown(
+            "If you need us to ask another climate science report or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>"
+        )
 
-        with gr.Column(scale = 1):
+    with gr.Row():
+        with gr.Column(scale=1):
             gr.Markdown("## OpenAI API")
-            gr.Markdown("To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others.")
+            gr.Markdown(
+                "To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others."
+            )
             openai_api_key_textbox = gr.Textbox(
                 placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
                 show_label=False,
                 lines=1,
                 type="password",
             )
-    openai_api_key_textbox.change(
-        set_openai_api_key, inputs=[openai_api_key_textbox]
-    )
-    openai_api_key_textbox.submit(
-        set_openai_api_key, inputs=[openai_api_key_textbox]
-    )
+    openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
+    openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
-    gr.Markdown("""
+    gr.Markdown(
+        """
 
 
 ## 📚 Sources
@@ -346,8 +362,9 @@ Carbon emissions were measured during the development and inference process usin
 This tool has been developed by the R&D lab at **Ekimetrics** (Jean Lelong, Nina Achache, Gabriel Olympie, Nicolas Chesneau, Natalia De la Calzada, Théo Alves Da Costa)
 
 If you have any questions or feature requests, please feel free to reach us out at <b>theo.alvesdacosta@ekimetrics.com</b>.
-""")
-    
+"""
+    )
+
     demo.queue(concurrency_count=16)
 
 demo.launch()
