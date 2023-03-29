@@ -194,6 +194,7 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
                     show_label=False,
                     placeholder="Ask here your climate-related question and press enter",
                 ).style(container=False)
+                ask_examples_hidden = gr.Textbox(elem_id = "hidden-message")
 
             examples_questions = gr.Examples(
                 [
@@ -230,7 +231,7 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
                     "Is the impact of climate change really as severe as it is claimed to be?",
                     "Is climate change a hoax created by the government or environmental organizations?",
                 ],
-                [ask],
+                [ask_examples_hidden],
             )
 
         with gr.Column(scale=1, variant="panel"):
@@ -238,22 +239,34 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             sources_textbox = gr.Textbox(
                 interactive=False, show_label=False, max_lines=50
             )
+    reports_select = gr.inputs.Dropdown(
+        ["IPCC only", "All available"],
+        default="All available",
+        label="Select reports",
+    ),
     ask.submit(
         fn=chat,
         inputs=[
             user_id_state,
             ask,
             state,
-            gr.inputs.Dropdown(
-                ["IPCC only", "All available"],
-                default="All available",
-                label="Select reports",
-            ),
+            reports_select
         ],
         outputs=[chatbot, state, sources_textbox],
     )
     ask.submit(reset_textbox, [], [ask])
 
+    ask_examples_hidden.change(
+        fn=chat,
+        inputs=[
+            user_id_state,
+            ask_examples_hidden,
+            state,
+            reports_select
+        ],
+        outputs=[chatbot, state, sources_textbox],
+    )
+    
     gr.Markdown("## How to use ClimateGPT")
     with gr.Row():
         with gr.Column(scale=1):
