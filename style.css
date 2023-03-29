@@ -35,3 +35,16 @@
 }
 
 .gr-box {border-color: #d6c37c}
+
+#hidden-message{
+    display:none;
+}
+
+.message.user{
+    border-color:#53bcd4 !important;
+    background-color: #daf1f6 !important;
+}
+
+.message{
+    font-size:14px !important;
+}
