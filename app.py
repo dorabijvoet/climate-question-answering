@@ -239,18 +239,22 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             sources_textbox = gr.Textbox(
                 interactive=False, show_label=False, max_lines=50
             )
-    reports_select = gr.Dropdown(
-        ["IPCC only", "All available"],
-        default="All available",
-        label="Select reports",
-    ),
+    # reports_select = gr.Dropdown(
+    #     ["IPCC only", "All available"],
+    #     default="All available",
+    #     label="Select reports",
+    # ),
     ask.submit(
         fn=chat,
         inputs=[
             user_id_state,
             ask,
             state,
-            reports_select
+            gr.inputs.Dropdown(
+                ["IPCC only", "All available"],
+                default="All available",
+                label="Select reports",
+            ),
         ],
         outputs=[chatbot, state, sources_textbox],
     )
@@ -262,7 +266,6 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             user_id_state,
             ask_examples_hidden,
             state,
-            reports_select
         ],
         outputs=[chatbot, state, sources_textbox],
     )
