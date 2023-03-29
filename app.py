@@ -239,7 +239,7 @@ ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports.
             sources_textbox = gr.Textbox(
                 interactive=False, show_label=False, max_lines=50
             )
-    reports_select = gr.inputs.Dropdown(
+    reports_select = gr.Dropdown(
         ["IPCC only", "All available"],
         default="All available",
         label="Select reports",
