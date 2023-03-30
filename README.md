@@ -1,5 +1,5 @@
 ---
-title: Climategpt
+title: ClimateQ&A
 emoji: 🌍
 colorFrom: blue
 colorTo: pink
