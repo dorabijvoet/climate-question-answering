@@ -170,9 +170,9 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css") as demo:
 <div class="tip-box">
 <div class="tip-box-title">
     <span class="light-bulb" role="img" aria-label="Light Bulb">💡</span>
-    How does ClimateGPT work?
+    How does ClimateQ&A work?
 </div>
-ClimateGPT harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateGPT is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateQ&A to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This innovative chatbot effectively puts a climate expert in your pocket, empowering you to engage with crucial environmental issues in a more informed and meaningful way.
+ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateQ&A is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateQ&A to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This innovative chatbot effectively puts a climate expert in your pocket, empowering you to engage with crucial environmental issues in a more informed and meaningful way.
 </div>
 
 """
