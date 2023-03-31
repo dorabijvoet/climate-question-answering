@@ -104,7 +104,7 @@ def chat(
         messages.pop()
     else:
         sources = "No climate science report was used to provide this answer."
-        complete_response = "No relevant documents found in the climate science reports, for a sourced answer you may want to try a more specific question.\n\n"
+        complete_response = "**No relevant passages found in the climate science reports, for a sourced answer you may want to try a more specific question (specifying your question on climate issues). The answer below will be tailored about climate change, but not sourced on the IPCC, please take the following results with caution.**.\n\n"
 
     messages.append({"role": "assistant", "content": complete_response})
     timestamp = str(datetime.now().timestamp())
@@ -172,7 +172,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css") as demo:
     <span class="light-bulb" role="img" aria-label="Light Bulb">💡</span>
     How does ClimateQ&A work?
 </div>
-ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateQ&A is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateQ&A to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This innovative chatbot effectively puts a climate expert in your pocket, empowering you to engage with crucial environmental issues in a more informed and meaningful way.
+ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateQ&A is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateQ&A to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This tool effectively puts a climate expert in your pocket.
 </div>
 
 """
@@ -207,6 +207,11 @@ ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports.
                     "What is the Paris Agreement and why is it important?",
                     "Which industries have the highest GHG emissions?",
                     "Is climate change caused by humans?",
+                    "Is climate change a hoax created by the government or environmental organizations?",
+                    "What is the relationship between climate change and biodiversity loss?",
+                    "What is the link between gender equality and climate change?",
+                    "Is the impact of climate change really as severe as it is claimed to be?",
+                    "What is the impact of rising sea levels?",
                     "What are the different greenhouse gases (GHG)?",
                     "What is the warming power of methane?",
                     "What is the jet stream?",
@@ -215,23 +220,18 @@ ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports.
                     "What is the impact of global warming on ocean currents?",
                     "How much warming is possible in 2050?",
                     "What is the impact of climate change in Africa?",
-                    "What is the impact of rising sea levels?",
                     "Will climate change accelerate diseases and epidemics like COVID?",
                     "What are the economic impacts of climate change?",
-                    "What is the link between gender equality and climate change?",
                     "How much is the cost of inaction ?",
                     "What is the relationship between climate change and poverty?",
-                    "What is the relationship between climate change and biodiversity loss?",
                     "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
                     "Is economic growth possible? What do you think about degrowth?",
                     "Will technology save us?",
                     "Is climate change a natural phenomenon ?",
                     "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
                     "Is the scientific consensus on climate change really as strong as it is claimed to be?",
-                    "Is the impact of climate change really as severe as it is claimed to be?",
-                    "Is climate change a hoax created by the government or environmental organizations?",
                 ],
-                [ask_examples_hidden],
+                [ask_examples_hidden],examples_per_page = 15,
             )
 
         with gr.Column(scale=1, variant="panel"):
@@ -365,13 +365,24 @@ Carbon emissions were measured during the development and inference process usin
 | --- | --- | --- | --- |
 | Development  | OCR and parsing all pdf documents with AI | 28gCO2e | CodeCarbon |
 | Development | Question Answering development | 114gCO2e | CodeCarbon |
-| Inference | Question Answering | TBD | CodeCarbon |
-| Inference | API call to turbo-GPT | 0.38gCO2e / call | OpenAI |
+| Inference | Question Answering | ~0.102gCO2e / call | CodeCarbon |
+| Inference | API call to turbo-GPT | ~0.38gCO2e / call | https://medium.com/@chrispointon/the-carbon-footprint-of-chatgpt-e1bc14e4cc2a |
+
+Carbon Emissions are **relatively low but not negligible** compared to other usages: one question asked to ClimateQ&A is around 0.482gCO2e - equivalent to 2.2m by car (https://datagir.ademe.fr/apps/impact-co2/)  
 
 ## 📧 Contact 
 This tool has been developed by the R&D lab at **Ekimetrics** (Jean Lelong, Nina Achache, Gabriel Olympie, Nicolas Chesneau, Natalia De la Calzada, Théo Alves Da Costa)
 
 If you have any questions or feature requests, please feel free to reach us out at <b>theo.alvesdacosta@ekimetrics.com</b>.
+
+## 💻 Developers
+For developers, the methodology used is detailed below : 
+- Extract individual paragraphs from scientific reports (e.g., IPCC, IPBES) using OCR techniques and open sources algorithms
+- Use Haystack to compute semantically representative embeddings for each paragraph using a sentence transformers model (https://huggingface.co/sentence-transformers/multi-qa-mpnet-base-dot-v1). 
+- Store all the embeddings in a FAISS Flat index. 
+- Reformulate each user query to be as specific as possible and compute its embedding. 
+- Retrieve up to 10 semantically closest paragraphs (using dot product similarity) from all available scientific reports. 
+- Provide these paragraphs as context for GPT-Turbo's answer in a system message. 
 """
     )
 
