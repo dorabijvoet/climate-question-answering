@@ -104,7 +104,7 @@ def chat(
         messages.pop()
     else:
         sources = "No climate science report was used to provide this answer."
-        complete_response = "**No relevant passages found in the climate science reports, for a sourced answer you may want to try a more specific question (specifying your question on climate issues). The answer below will be tailored about climate change, but not sourced on the IPCC, please take the following results with caution.**.\n\n"
+        complete_response = "**⚠️ No relevant passages found in the climate science reports, for a sourced answer you may want to try a more specific question (specifying your question on climate issues). The answer will probably reasonable, but not sourced on the IPCC, please use the following results with caution.**\n\n"
 
     messages.append({"role": "assistant", "content": complete_response})
     timestamp = str(datetime.now().timestamp())
@@ -378,6 +378,7 @@ If you have any questions or feature requests, please feel free to reach us out 
 
 ## 💻 Developers
 For developers, the methodology used is detailed below : 
+
 - Extract individual paragraphs from scientific reports (e.g., IPCC, IPBES) using OCR techniques and open sources algorithms
 - Use Haystack to compute semantically representative embeddings for each paragraph using a sentence transformers model (https://huggingface.co/sentence-transformers/multi-qa-mpnet-base-dot-v1). 
 - Store all the embeddings in a FAISS Flat index. 
