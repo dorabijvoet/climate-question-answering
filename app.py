@@ -13,6 +13,21 @@ import numpy as np
 from datetime import datetime
 from azure.storage.fileshare import ShareServiceClient
 
+from dotenv import load_dotenv
+
+# Load the environment variables from the .env file
+load_dotenv()
+print(os.environ)
+
+# for key in ["CONTENT","API_KEY","SOURCES","RESSOURCE_ENDPOINT"]:
+#     os.environ[key.lower()] = os.environ[key]
+
+
+theme = gr.themes.Soft(
+    primary_hue="sky",
+    font=[gr.themes.GoogleFont('Inter'), 'ui-sans-serif', 'system-ui', 'sans-serif'],
+)
+
 
 system_template = {"role": "system", "content": os.environ["content"]}
 
@@ -44,10 +59,14 @@ credential = {
     "account_name": os.environ["account_name"],
 }
 
-account_url = os.environ["account_url"]
-file_share_name = "climategpt"
-service = ShareServiceClient(account_url=account_url, credential=credential)
-share_client = service.get_share_client(file_share_name)
+try:
+    account_url = os.environ["account_url"]
+    file_share_name = "climategpt"
+    service = ShareServiceClient(account_url=account_url, credential=credential)
+    share_client = service.get_share_client(file_share_name)
+except:
+    print("Skipped logging")
+
 user_id = create_user_id(10)
 
 
@@ -55,7 +74,7 @@ def chat(
     user_id: str,
     query: str,
     history: list = [system_template],
-    report_type: str = "All available",
+    report_type: str = "IPCC only",
     threshold: float = 0.555,
 ) -> tuple:
     """retrieve relevant documents in the document store then query gpt-turbo
@@ -81,7 +100,7 @@ def chat(
 
     messages = history + [{"role": "user", "content": query}]
     sources = "\n\n".join(
-        f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
+        f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
         for i, d in enumerate(docs, 1)
         if d.score > threshold
     )
@@ -91,43 +110,54 @@ def chat(
             {"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"}
         )
 
-    response = openai.Completion.create(
-        engine="climateGPT",
-        prompt=to_completion(messages),
-        temperature=0.2,
-        stream=True,
-        max_tokens=1024,
-    )
+        response = openai.Completion.create(
+            engine="climateGPT",
+            prompt=to_completion(messages),
+            temperature=0.2,
+            stream=True,
+            max_tokens=1024,
+        )
 
-    if sources:
         complete_response = ""
         messages.pop()
+
+        messages.append({"role": "assistant", "content": complete_response})
+        timestamp = str(datetime.now().timestamp())
+        file = user_id[0] + timestamp + ".json"
+        logs = {
+            "user_id": user_id[0],
+            "prompt": query,
+            "retrived": sources,
+            "report_type": report_type,
+            "prompt_eng": messages[0],
+            "answer": messages[-1]["content"],
+            "time": timestamp,
+        }
+        try:
+            log_on_azure(file, logs, share_client)
+        except:
+            pass
+
+
+        for chunk in response:
+            if (
+                chunk_message := chunk["choices"][0].get("text")
+            ) and chunk_message != "<|im_end|>":
+                complete_response += chunk_message
+                messages[-1]["content"] = complete_response
+                gradio_format = make_pairs([a["content"] for a in messages[1:]])
+                yield gradio_format, messages, sources
+
+
     else:
-        sources = "No climate science report was used to provide this answer."
-        complete_response = "**⚠️ No relevant passages found in the climate science reports, for a sourced answer you may want to try a more specific question (specifying your question on climate issues). The answer will probably reasonable, but not sourced on the IPCC, please use the following results with caution.**\n\n"
+        sources = "⚠️ No relevant passages found in the climate science reports"
+        complete_response = "**⚠️ No relevant passages found in the climate science reports, you may want to ask a more specific question (specifying your question on climate issues).**"
 
-    messages.append({"role": "assistant", "content": complete_response})
-    timestamp = str(datetime.now().timestamp())
-    file = user_id[0] + timestamp + ".json"
-    logs = {
-        "user_id": user_id[0],
-        "prompt": query,
-        "retrived": sources,
-        "report_type": report_type,
-        "prompt_eng": messages[0],
-        "answer": messages[-1]["content"],
-        "time": timestamp,
-    }
-    log_on_azure(file, logs, share_client)
+        messages.append({"role": "assistant", "content": complete_response})
 
-    for chunk in response:
-        if (
-            chunk_message := chunk["choices"][0].get("text")
-        ) and chunk_message != "<|im_end|>":
-            complete_response += chunk_message
-            messages[-1]["content"] = complete_response
-            gradio_format = make_pairs([a["content"] for a in messages[1:]])
-            yield gradio_format, messages, sources
+        gradio_format = make_pairs([a["content"] for a in messages[1:]])
+        yield gradio_format, messages, sources
+
 
 
 def save_feedback(feed: str, user_id):
@@ -152,7 +182,7 @@ def log_on_azure(file, logs, share_client):
     file_client.upload_file(str(logs))
 
 
-with gr.Blocks(title="🌍 Climate Q&A", css="style.css") as demo:
+with gr.Blocks(title="🌍 Climate Q&A", css="style.css",theme = theme) as demo:
 
     user_id_state = gr.State([user_id])
 
@@ -166,14 +196,19 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css") as demo:
             gr.Markdown(
                 """
 <p><b>Climate change and environmental disruptions have become some of the most pressing challenges facing our planet today</b>. As global temperatures rise and ecosystems suffer, it is essential for individuals to understand the gravity of the situation in order to make informed decisions and advocate for appropriate policy changes.</p>
-<p>However, comprehending the vast and complex scientific information can be daunting, as the scientific consensus references, such as <b>the Intergovernmental Panel on Climate Change (IPCC) reports, span thousands of pages</b> and are often laden with technical jargon. To bridge this gap and make climate science more accessible, we introduce <b>ClimateQ&A as a tool to distill expert-level knowledge into easily digestible insights about climate science.</b></p>
+<p>However, comprehending the vast and complex scientific information can be daunting, as the scientific consensus references, such as <b>the Intergovernmental Panel on Climate Change (IPCC) reports, span thousands of pages</b>. To bridge this gap and make climate science more accessible, we introduce <b>ClimateQ&A as a tool to distill expert-level knowledge into easily digestible insights about climate science.</b></p>
 <div class="tip-box">
 <div class="tip-box-title">
     <span class="light-bulb" role="img" aria-label="Light Bulb">💡</span>
     How does ClimateQ&A work?
 </div>
-ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateQ&A is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateQ&A to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience. This tool effectively puts a climate expert in your pocket.
+ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateQ&A is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateQ&A to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience.
 </div>
+
+<div class="warning-box">
+Version 0.2-beta - This tool is under active development
+</div>
+
 
 """
             )
@@ -186,7 +221,7 @@ ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports.
 
     with gr.Row():
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(elem_id="chatbot")
+            chatbot = gr.Chatbot(elem_id="chatbot",label = "ClimateQ&A chatbot")
             state = gr.State([system_template])
 
             with gr.Row():
@@ -252,7 +287,7 @@ ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports.
             state,
             gr.inputs.Dropdown(
                 ["IPCC only", "All available"],
-                default="All available",
+                default="IPCC only",
                 label="Select reports",
             ),
         ],
@@ -379,7 +414,7 @@ If you have any questions or feature requests, please feel free to reach us out 
 ## 💻 Developers
 For developers, the methodology used is detailed below : 
 
-- Extract individual paragraphs from scientific reports (e.g., IPCC, IPBES) using OCR techniques and open sources algorithms
+- Extract individual paragraphs from scientific reports (e.g., IPCC, IPBES) using OCR techniques and open sources algorithms
 - Use Haystack to compute semantically representative embeddings for each paragraph using a sentence transformers model (https://huggingface.co/sentence-transformers/multi-qa-mpnet-base-dot-v1). 
 - Store all the embeddings in a FAISS Flat index. 
 - Reformulate each user query to be as specific as possible and compute its embedding. 
