@@ -107,7 +107,7 @@ def chat(
         ]
     )
 
-    if len(docs) > 0:
+    if docs:
         messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
 
         response = openai.Completion.create(
