@@ -101,13 +101,13 @@ def chat(
     sources = "\n\n".join(
         [f"query used for retrieval:\n{reformulated_query}"]
         + [
-            f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
+            f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
             for i, d in enumerate(docs, 1)
             if d.score > threshold
         ]
     )
 
-    if sources:
+    if len(docs) > 0:
         messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
 
         response = openai.Completion.create(
