@@ -15,7 +15,6 @@ from azure.storage.fileshare import ShareServiceClient
 
 # from dotenv import load_dotenv
 
-
 # load_dotenv()
 
 theme = gr.themes.Soft(
@@ -94,20 +93,18 @@ def chat(
         stop=["\n---\n", "<|im_end|>"],
     )
     reformulated_query = reformulated_query["choices"][0]["text"]
-
-    docs = retriever.retrieve(query=reformulated_query, top_k=10)
-
+    docs = [d for d in retriever.retrieve(query=reformulated_query, top_k=10) if d.score > threshold]
     messages = history + [{"role": "user", "content": query}]
-    sources = "\n\n".join(
-        [f"query used for retrieval:\n{reformulated_query}"]
-        + [
-            f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
-            for i, d in enumerate(docs, 1)
-            if d.score > threshold
-        ]
-    )
 
-    if sources:
+    if docs:
+        sources = "\n\n".join(
+            [f"query used for retrieval:\n{reformulated_query}"]
+            + [
+                f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
+                for i, d in enumerate(docs, 1)
+            ]
+        )
+
         messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
 
         response = openai.Completion.create(
