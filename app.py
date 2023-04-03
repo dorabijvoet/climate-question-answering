@@ -13,21 +13,15 @@ import numpy as np
 from datetime import datetime
 from azure.storage.fileshare import ShareServiceClient
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-# Load the environment variables from the .env file
-load_dotenv()
-print(os.environ)
 
-# for key in ["CONTENT","API_KEY","SOURCES","RESSOURCE_ENDPOINT"]:
-#     os.environ[key.lower()] = os.environ[key]
-
+# load_dotenv()
 
 theme = gr.themes.Soft(
     primary_hue="sky",
-    font=[gr.themes.GoogleFont('Inter'), 'ui-sans-serif', 'system-ui', 'sans-serif'],
+    font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"],
 )
-
 
 system_template = {"role": "system", "content": os.environ["content"]}
 
@@ -59,14 +53,10 @@ credential = {
     "account_name": os.environ["account_name"],
 }
 
-try:
-    account_url = os.environ["account_url"]
-    file_share_name = "climategpt"
-    service = ShareServiceClient(account_url=account_url, credential=credential)
-    share_client = service.get_share_client(file_share_name)
-except:
-    print("Skipped logging")
-
+account_url = os.environ["account_url"]
+file_share_name = "climategpt"
+service = ShareServiceClient(account_url=account_url, credential=credential)
+share_client = service.get_share_client(file_share_name)
 user_id = create_user_id(10)
 
 
@@ -96,24 +86,34 @@ def chat(
     else:
         raise Exception("report_type arg should be in (All available, IPCC only)")
 
-    docs = retriever.retrieve(query=query, top_k=10)
+    reformulated_query = openai.Completion.create(
+        engine="climateGPT",
+        prompt=f"Reformulate the following user message to be a short standalone question in English, in the context of an educationnal discussion about climate change.\n---\nquery: La technologie nous sauvera-t-elle ?\nstandalone question: Can technology help humanity mitigate the effects of climate change?\n---\nquery: what are our reserves in fossil fuel?\nstandalone question: What are the current reserves of fossil fuels and how long will they last?\n---\nquery: {query}\nstandalone question: ",
+        temperature=0,
+        max_tokens=128,
+        stop=["\n---\n", "<|im_end|>"],
+    )
+    reformulated_query = reformulated_query["choices"][0]["text"]
+
+    docs = retriever.retrieve(query=reformulated_query, top_k=10)
 
     messages = history + [{"role": "user", "content": query}]
     sources = "\n\n".join(
-        f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
-        for i, d in enumerate(docs, 1)
-        if d.score > threshold
+        [f"query used for retrieval:\n{reformulated_query}"]
+        + [
+            f"doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
+            for i, d in enumerate(docs, 1)
+            if d.score > threshold
+        ]
     )
 
     if sources:
-        messages.append(
-            {"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"}
-        )
+        messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
 
         response = openai.Completion.create(
             engine="climateGPT",
             prompt=to_completion(messages),
-            temperature=0.2,
+            temperature=0,  # deterministic
             stream=True,
             max_tokens=1024,
         )
@@ -133,31 +133,21 @@ def chat(
             "answer": messages[-1]["content"],
             "time": timestamp,
         }
-        try:
-            log_on_azure(file, logs, share_client)
-        except:
-            pass
-
+        log_on_azure(file, logs, share_client)
 
         for chunk in response:
-            if (
-                chunk_message := chunk["choices"][0].get("text")
-            ) and chunk_message != "<|im_end|>":
+            if (chunk_message := chunk["choices"][0].get("text")) and chunk_message != "<|im_end|>":
                 complete_response += chunk_message
                 messages[-1]["content"] = complete_response
                 gradio_format = make_pairs([a["content"] for a in messages[1:]])
                 yield gradio_format, messages, sources
 
-
     else:
         sources = "⚠️ No relevant passages found in the climate science reports"
         complete_response = "**⚠️ No relevant passages found in the climate science reports, you may want to ask a more specific question (specifying your question on climate issues).**"
-
         messages.append({"role": "assistant", "content": complete_response})
-
         gradio_format = make_pairs([a["content"] for a in messages[1:]])
         yield gradio_format, messages, sources
-
 
 
 def save_feedback(feed: str, user_id):
@@ -182,15 +172,12 @@ def log_on_azure(file, logs, share_client):
     file_client.upload_file(str(logs))
 
 
-with gr.Blocks(title="🌍 Climate Q&A", css="style.css",theme = theme) as demo:
-
+with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     user_id_state = gr.State([user_id])
 
     # Gradio
     gr.Markdown("<h1><center>Climate Q&A 🌍</center></h1>")
-    gr.Markdown(
-        "<h4><center>Ask climate-related questions to the IPCC reports</center></h4>"
-    )
+    gr.Markdown("<h4><center>Ask climate-related questions to the IPCC reports</center></h4>")
     with gr.Row():
         with gr.Column(scale=1):
             gr.Markdown(
@@ -215,13 +202,11 @@ Version 0.2-beta - This tool is under active development
 
         with gr.Column(scale=1):
             gr.Markdown("![](https://i.postimg.cc/fLvsvMzM/Untitled-design-5.png)")
-            gr.Markdown(
-                "*Source : IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6)*"
-            )
+            gr.Markdown("*Source : IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6)*")
 
     with gr.Row():
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(elem_id="chatbot",label = "ClimateQ&A chatbot")
+            chatbot = gr.Chatbot(elem_id="chatbot", label="ClimateQ&A chatbot")
             state = gr.State([system_template])
 
             with gr.Row():
@@ -229,7 +214,7 @@ Version 0.2-beta - This tool is under active development
                     show_label=False,
                     placeholder="Ask here your climate-related question and press enter",
                 ).style(container=False)
-                ask_examples_hidden = gr.Textbox(elem_id = "hidden-message")
+                ask_examples_hidden = gr.Textbox(elem_id="hidden-message")
 
             examples_questions = gr.Examples(
                 [
@@ -266,14 +251,13 @@ Version 0.2-beta - This tool is under active development
                     "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
                     "Is the scientific consensus on climate change really as strong as it is claimed to be?",
                 ],
-                [ask_examples_hidden],examples_per_page = 15,
+                [ask_examples_hidden],
+                examples_per_page=15,
             )
 
         with gr.Column(scale=1, variant="panel"):
             gr.Markdown("### Sources")
-            sources_textbox = gr.Textbox(
-                interactive=False, show_label=False, max_lines=50
-            )
+            sources_textbox = gr.Textbox(interactive=False, show_label=False, max_lines=50)
     # reports_select = gr.Dropdown(
     #     ["IPCC only", "All available"],
     #     default="All available",
@@ -304,7 +288,7 @@ Version 0.2-beta - This tool is under active development
         ],
         outputs=[chatbot, state, sources_textbox],
     )
-    
+
     gr.Markdown("## How to use ClimateQ&A")
     with gr.Row():
         with gr.Column(scale=1):
@@ -319,7 +303,6 @@ Version 0.2-beta - This tool is under active development
     """
             )
         with gr.Column(scale=1):
-
             gr.Markdown(
                 """
     ### ⚠️ Limitations
