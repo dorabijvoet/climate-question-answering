@@ -335,19 +335,19 @@ Version 0.2-beta - This tool is under active development
                 "If you need us to ask another climate science report or ask any question, contact us at <b>theo.alvesdacosta@ekimetrics.com</b>"
             )
 
-        with gr.Column(scale=1):
-            gr.Markdown("### OpenAI API")
-            gr.Markdown(
-                "To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others."
-            )
-            openai_api_key_textbox = gr.Textbox(
-                placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
-                show_label=False,
-                lines=1,
-                type="password",
-            )
-    openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
-    openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
+    #     with gr.Column(scale=1):
+    #         gr.Markdown("### OpenAI API")
+    #         gr.Markdown(
+    #             "To make climate science accessible to a wider audience, we have opened our own OpenAI API key with a monthly cap of $1000. If you already have an API key, please use it to help conserve bandwidth for others."
+    #         )
+    #         openai_api_key_textbox = gr.Textbox(
+    #             placeholder="Paste your OpenAI API key (sk-...) and hit Enter",
+    #             show_label=False,
+    #             lines=1,
+    #             type="password",
+    #         )
+    # openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
+    # openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
     gr.Markdown(
         """
