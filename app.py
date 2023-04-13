@@ -16,7 +16,7 @@ from azure.storage.fileshare import ShareServiceClient
 # from dotenv import load_dotenv
 # load_dotenv()
 
-print(os.environ["content"], os.environ["retreive"], sep="\n-\n" * 2)
+print(os.environ["content"], os.environ["sources"], sep="\n-\n" * 2)
 
 theme = gr.themes.Soft(
     primary_hue="sky",
