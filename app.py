@@ -13,17 +13,44 @@ import numpy as np
 from datetime import datetime
 from azure.storage.fileshare import ShareServiceClient
 
-# from dotenv import load_dotenv
-# load_dotenv()
-
-print(os.environ["content"], os.environ["sources"], sep="\n-\n" * 2)
 
 theme = gr.themes.Soft(
     primary_hue="sky",
     font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"],
 )
 
-system_template = {"role": "system", "content": os.environ["content"]}
+init_prompt = (
+    "You are ClimateGPT, an AI Assistant by Ekimetrics. "
+    "You are given extracted parts of IPCC reports and a question."
+    " Provide a clear and structured answer based on the context provided. "
+    "When relevant, use bullet points and lists to structure your answers."
+)
+sources_prompt = (
+    "When relevant, use facts and numbers from the following documents in your answer. "
+    "Whenever you use information from a document, reference it at the end of the sentence (ex: [doc 2]). "
+    "You don't have to use all documents, only if it makes sense in the conversation. "
+    "If no relevant information to answer the question is present in the documents, "
+    "just say you don't have enough information to answer."
+)
+
+
+def get_reformulation_prompt(query: str) -> str:
+    return f"""Reformulate the following user message to be a short standalone question in English, in the context of an educationnal discussion about climate change.
+---
+query: La technologie nous sauvera-t-elle ?
+standalone question: Can technology help humanity mitigate the effects of climate change?
+---
+query: what are our reserves in fossil fuel?
+standalone question: What are the current reserves of fossil fuels and how long will they last?
+---
+query: {query}
+standalone question:"""
+
+
+system_template = {
+    "role": "system",
+    "content": init_prompt,
+}
 
 openai.api_type = "azure"
 openai.api_key = os.environ["api_key"]
@@ -37,6 +64,7 @@ retrieve_all = EmbeddingRetriever(
     ),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
+    progress_bar=False,
 )
 
 retrieve_giec = EmbeddingRetriever(
@@ -88,7 +116,7 @@ def chat(
 
     reformulated_query = openai.Completion.create(
         engine="climateGPT",
-        prompt=f"Reformulate the following user message to be a short standalone question in English, in the context of an educationnal discussion about climate change.\n---\nquery: La technologie nous sauvera-t-elle ?\nstandalone question: Can technology help humanity mitigate the effects of climate change?\n---\nquery: what are our reserves in fossil fuel?\nstandalone question: What are the current reserves of fossil fuels and how long will they last?\n---\nquery: {query}\nstandalone question: ",
+        prompt=get_reformulation_prompt(query),
         temperature=0,
         max_tokens=128,
         stop=["\n---\n", "<|im_end|>"],
@@ -105,7 +133,7 @@ def chat(
                 for i, d in enumerate(docs, 1)
             ]
         )
-        messages.append({"role": "system", "content": f"{os.environ['sources']}\n\n{sources}"})
+        messages.append({"role": "system", "content": f"{sources_prompt}\n\n{sources}"})
 
         response = openai.Completion.create(
             engine="climateGPT",
@@ -255,11 +283,7 @@ Version 0.2-beta - This tool is under active development
         with gr.Column(scale=1, variant="panel"):
             gr.Markdown("### Sources")
             sources_textbox = gr.Textbox(interactive=False, show_label=False, max_lines=50)
-    # reports_select = gr.Dropdown(
-    #     ["IPCC only", "All available"],
-    #     default="All available",
-    #     label="Select reports",
-    # ),
+
     ask.submit(
         fn=chat,
         inputs=[
