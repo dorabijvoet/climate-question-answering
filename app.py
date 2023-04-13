@@ -20,9 +20,9 @@ theme = gr.themes.Soft(
 )
 
 init_prompt = (
-    "You are ClimateGPT, an AI Assistant by Ekimetrics. "
-    "You are given extracted parts of IPCC reports and a question."
-    " Provide a clear and structured answer based on the context provided. "
+    "You are ClimateQA, an AI Assistant by Ekimetrics. "
+    "You are given a question and extracted parts of IPCC reports. "
+    "Provide a clear and structured answer based on the context provided. "
     "When relevant, use bullet points and lists to structure your answers."
 )
 sources_prompt = (
