@@ -39,9 +39,11 @@ def get_reformulation_prompt(query: str) -> str:
 ---
 query: La technologie nous sauvera-t-elle ?
 standalone question: Can technology help humanity mitigate the effects of climate change?
+language: French
 ---
 query: what are our reserves in fossil fuel?
 standalone question: What are the current reserves of fossil fuels and how long will they last?
+language: English
 ---
 query: {query}
 standalone question:"""
@@ -122,6 +124,8 @@ def chat(
         stop=["\n---\n", "<|im_end|>"],
     )
     reformulated_query = reformulated_query["choices"][0]["text"]
+    reformulated_query,language = reformulated_query.split("\n")
+    language = language.split(":")[1].strip()
     docs = [d for d in retriever.retrieve(query=reformulated_query, top_k=10) if d.score > threshold]
     messages = history + [{"role": "user", "content": query}]
 
@@ -129,11 +133,11 @@ def chat(
         sources = "\n\n".join(
             [f"query used for retrieval:\n{reformulated_query}"]
             + [
-                f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
+                f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content.replace("\r\n","")}"
                 for i, d in enumerate(docs, 1)
             ]
         )
-        messages.append({"role": "system", "content": f"{sources_prompt}\n\n{sources}"})
+        messages.append({"role": "system", "content": f"{sources_prompt}\n\n{sources}\n\nAnswer in {language}:"})
 
         response = openai.Completion.create(
             engine="climateGPT",
