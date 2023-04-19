@@ -133,7 +133,7 @@ def chat(
         sources = "\n\n".join(
             [f"query used for retrieval:\n{reformulated_query}"]
             + [
-                f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content.replace("\r\n","")}"
+                f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content.replace('\r\n','')}"
                 for i, d in enumerate(docs, 1)
             ]
         )
@@ -324,7 +324,7 @@ Version 0.2-beta - This tool is under active development
         - ClimateQ&A retrieves specific passages from the IPCC reports to help answer your question accurately.
         - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
         - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
-    - ClimateQ&A integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
+    - ClimateQ&A integrates multiple sources (IPCC, IPBES, IEA, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
     """
             )
         with gr.Column(scale=1):
@@ -392,7 +392,6 @@ Version 0.2-beta - This tool is under active development
 | IPBES | IPBES Global report on Biodiversity - March 2022 | https://www.ipbes.net/global-assessment | 1148 pages | June 2022 |
 | FAO | Food Outlook Biannual Report on Global Food Markets | https://www.fao.org/documents/card/en/c/cb9427en | 174 pages | June 2022 |
 | IEA | IEA’s report on the Role of Critical Minerals in Clean Energy Transitions | https://www.iea.org/reports/the-role-of-critical-minerals-in-clean-energy-transitions | 287 pages | May 2021 |
-| Club de Rome | Limits to Growth | https://www.donellameadows.org/wp-content/userfiles/Limits-to-Growth-digital-scan-version.pdf | 211 pages | 1972 |
 |  | Outside The Safe operating system of the Planetary Boundary for Novel Entities | https://pubs.acs.org/doi/10.1021/acs.est.1c04158 | 12 pages | January 2022 |
 |  | Planetary boundaries: Guiding human development on a changing planet | https://www.science.org/doi/10.1126/science.1259855 | 11 pages | February 2015 |
 | UNFCCC | State of the Oceans report | https://unfccc.int/documents/568128 | 75 pages | August 2022 |
