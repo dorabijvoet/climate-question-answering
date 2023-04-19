@@ -40,3 +40,5 @@ documents/climate_gpt_only_giec.faiss filter=lfs diff=lfs merge=lfs -text
 climate_gpt_only_giec.db filter=lfs diff=lfs merge=lfs -text
 climate_gpt_v2_only_giec.db filter=lfs diff=lfs merge=lfs -text
 climate_gpt_v2.db filter=lfs diff=lfs merge=lfs -text
+documents/climate_gpt_v2_only_giec.faiss filter=lfs diff=lfs merge=lfs -text
+documents/climate_gpt_v2.faiss filter=lfs diff=lfs merge=lfs -text
