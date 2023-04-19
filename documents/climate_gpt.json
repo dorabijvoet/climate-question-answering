@@ -1,7 +1,0 @@
-{
-    "sql_url": "sqlite:///climate_gpt.db",
-    "faiss_index_factory_str": "Flat",
-    "index": "climate_gpt",
-    "similarity": "dot_product",
-    "embedding_dim": 768
-}

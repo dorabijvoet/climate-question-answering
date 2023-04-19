@@ -61,8 +61,8 @@ openai.api_version = "2022-12-01"
 
 retrieve_all = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
-        index_path="./documents/climate_gpt.faiss",
-        config_path="./documents/climate_gpt.json",
+        index_path="./documents/climate_gpt_v2.faiss",
+        config_path="./documents/climate_gpt_v2.json",
     ),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
@@ -71,8 +71,8 @@ retrieve_all = EmbeddingRetriever(
 
 retrieve_giec = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
-        index_path="./documents/climate_gpt_only_giec.faiss",
-        config_path="./documents/climate_gpt_only_giec.json",
+        index_path="./documents/climate_gpt_v2_only_giec.faiss",
+        config_path="./documents/climate_gpt_v2_only_giec.json",
     ),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
@@ -124,18 +124,17 @@ def chat(
         stop=["\n---\n", "<|im_end|>"],
     )
     reformulated_query = reformulated_query["choices"][0]["text"]
-    reformulated_query,language = reformulated_query.split("\n")
+    reformulated_query, language = reformulated_query.split("\n")
     language = language.split(":")[1].strip()
     docs = [d for d in retriever.retrieve(query=reformulated_query, top_k=10) if d.score > threshold]
     messages = history + [{"role": "user", "content": query}]
 
     if docs:
-        
         docs_string = []
-        for i,d in enumerate(docs,1):
-            content = d.content.replace("\r\n","")
+        for i, d in enumerate(docs, 1):
+            content = d.content.replace("\r\n", "")
             docs_string.append(f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{content}")
-        sources = "\n\n".join([f"Query used for retrieval:\n{reformulated_query}"]+docs_string)
+        sources = "\n\n".join([f"Query used for retrieval:\n{reformulated_query}"] + docs_string)
         messages.append({"role": "system", "content": f"{sources_prompt}\n\n{sources}\n\nAnswer in {language}:"})
 
         response = openai.Completion.create(
