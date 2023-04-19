@@ -130,13 +130,12 @@ def chat(
     messages = history + [{"role": "user", "content": query}]
 
     if docs:
-        sources = "\n\n".join(
-            [f"query used for retrieval:\n{reformulated_query}"]
-            + [
-                f"""📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content.replace("\r\n","")}"""
-                for i, d in enumerate(docs, 1)
-            ]
-        )
+        
+        docs_string = []
+        for i,d in enumerate(docs,1):
+            content = d.content.replace("\r\n","")
+            docs_string.append(f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{content}")
+        sources = "\n\n".join([f"Query used for retrieval:\n{reformulated_query}"]+docs_string
         messages.append({"role": "system", "content": f"{sources_prompt}\n\n{sources}\n\nAnswer in {language}:"})
 
         response = openai.Completion.create(
