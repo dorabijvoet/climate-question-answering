@@ -133,7 +133,7 @@ def chat(
         sources = "\n\n".join(
             [f"query used for retrieval:\n{reformulated_query}"]
             + [
-                f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content.replace('\r\n','')}"
+                f"""📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content.replace("\r\n","")}"""
                 for i, d in enumerate(docs, 1)
             ]
         )
