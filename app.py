@@ -331,7 +331,6 @@ Version 0.2-beta - This tool is under active development
     ### ⚠️ Limitations
     <div class="warning-box">
     <ul>
-        <li>Currently available in English only.</li>
         <li>Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.</li>
         <li>ClimateQ&A is specifically designed for climate-related inquiries. If you ask a non-environmental question, the chatbot will politely remind you that its focus is on climate and environmental issues.</li>
     </div>
