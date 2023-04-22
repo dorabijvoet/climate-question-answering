@@ -39,9 +39,11 @@ def get_reformulation_prompt(query: str) -> str:
 ---
 query: La technologie nous sauvera-t-elle ?
 standalone question: Can technology help humanity mitigate the effects of climate change?
+language: French
 ---
 query: what are our reserves in fossil fuel?
 standalone question: What are the current reserves of fossil fuels and how long will they last?
+language: English
 ---
 query: {query}
 standalone question:"""
@@ -59,8 +61,8 @@ openai.api_version = "2022-12-01"
 
 retrieve_all = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
-        index_path="./documents/climate_gpt.faiss",
-        config_path="./documents/climate_gpt.json",
+        index_path="./documents/climate_gpt_v2.faiss",
+        config_path="./documents/climate_gpt_v2.json",
     ),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
@@ -69,8 +71,8 @@ retrieve_all = EmbeddingRetriever(
 
 retrieve_giec = EmbeddingRetriever(
     document_store=FAISSDocumentStore.load(
-        index_path="./documents/climate_gpt_only_giec.faiss",
-        config_path="./documents/climate_gpt_only_giec.json",
+        index_path="./documents/climate_gpt_v2_only_giec.faiss",
+        config_path="./documents/climate_gpt_v2_only_giec.json",
     ),
     embedding_model="sentence-transformers/multi-qa-mpnet-base-dot-v1",
     model_format="sentence_transformers",
@@ -122,18 +124,18 @@ def chat(
         stop=["\n---\n", "<|im_end|>"],
     )
     reformulated_query = reformulated_query["choices"][0]["text"]
+    reformulated_query, language = reformulated_query.split("\n")
+    language = language.split(":")[1].strip()
     docs = [d for d in retriever.retrieve(query=reformulated_query, top_k=10) if d.score > threshold]
     messages = history + [{"role": "user", "content": query}]
 
     if docs:
-        sources = "\n\n".join(
-            [f"query used for retrieval:\n{reformulated_query}"]
-            + [
-                f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{d.content}"
-                for i, d in enumerate(docs, 1)
-            ]
-        )
-        messages.append({"role": "system", "content": f"{sources_prompt}\n\n{sources}"})
+        docs_string = []
+        for i, d in enumerate(docs, 1):
+            content = d.content.replace("\r\n", "")
+            docs_string.append(f"📃 doc {i}: {d.meta['file_name']} page {d.meta['page_number']}\n{content}")
+        sources = "\n\n".join([f"Query used for retrieval:\n{reformulated_query}"] + docs_string)
+        messages.append({"role": "system", "content": f"{sources_prompt}\n\n{sources}\n\nAnswer in {language}:"})
 
         response = openai.Completion.create(
             engine="climateGPT",
@@ -320,7 +322,7 @@ Version 0.2-beta - This tool is under active development
         - ClimateQ&A retrieves specific passages from the IPCC reports to help answer your question accurately.
         - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
         - Feel free to ask follow-up questions within the chatbot for a more in-depth understanding.
-    - ClimateQ&A integrates multiple sources (IPCC, IPBES, IEA, Limits to Growth, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
+    - ClimateQ&A integrates multiple sources (IPCC, IPBES, IEA, … ) to cover various aspects of environmental science, such as climate change, biodiversity, energy, economy, and pollution. See all sources used below.
     """
             )
         with gr.Column(scale=1):
@@ -329,7 +331,6 @@ Version 0.2-beta - This tool is under active development
     ### ⚠️ Limitations
     <div class="warning-box">
     <ul>
-        <li>Currently available in English only.</li>
         <li>Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.</li>
         <li>ClimateQ&A is specifically designed for climate-related inquiries. If you ask a non-environmental question, the chatbot will politely remind you that its focus is on climate and environmental issues.</li>
     </div>
@@ -381,20 +382,41 @@ Version 0.2-beta - This tool is under active development
 ## 📚 Sources
 | Source | Report | URL | Number of pages | Release date |
 | --- | --- | --- | --- | --- |
-| IPCC | IPCC AR6 - First Assessment Report on the Physical Science of Climate Change | https://report.ipcc.ch/ar6/wg1/IPCC_AR6_WGI_FullReport.pdf | 2049 pages | August 2021 |
-| IPCC | IPCC AR6 - Second Assessment Report on Climate Change Adaptation | https://report.ipcc.ch/ar6/wg2/IPCC_AR6_WGII_FullReport.pdf | 3068 pages | February 2022 |
-| IPCC | IPCC AR6 - Third Assessment Report on Climate Change Mitigation | https://www.ipcc.ch/report/ar6/wg3/downloads/report/IPCC_AR6_WGIII_FullReport.pdf | 2258 pages | April 2022 |
-| IPCC | IPCC AR6 - Synthesis Report of the IPCC 6th assessment report (AR6) | https://report.ipcc.ch/ar6syr/pdf/IPCC_AR6_SYR_SPM.pdf | 36 pages | March 2023 |
-| IPBES | IPBES Global report on Biodiversity - March 2022 | https://www.ipbes.net/global-assessment | 1148 pages | June 2022 |
-| FAO | Food Outlook Biannual Report on Global Food Markets | https://www.fao.org/documents/card/en/c/cb9427en | 174 pages | June 2022 |
-| IEA | IEA’s report on the Role of Critical Minerals in Clean Energy Transitions | https://www.iea.org/reports/the-role-of-critical-minerals-in-clean-energy-transitions | 287 pages | May 2021 |
-| Club de Rome | Limits to Growth | https://www.donellameadows.org/wp-content/userfiles/Limits-to-Growth-digital-scan-version.pdf | 211 pages | 1972 |
-|  | Outside The Safe operating system of the Planetary Boundary for Novel Entities | https://pubs.acs.org/doi/10.1021/acs.est.1c04158 | 12 pages | January 2022 |
-|  | Planetary boundaries: Guiding human development on a changing planet | https://www.science.org/doi/10.1126/science.1259855 | 11 pages | February 2015 |
-| UNFCCC | State of the Oceans report | https://unfccc.int/documents/568128 | 75 pages | August 2022 |
-| IEA | Word Energy Outlook 2021 | https://www.iea.org/reports/world-energy-outlook-2021 | 386 pages | October 2021 |
-| IEA | Word Energy Outlook 2022 | https://www.iea.org/reports/world-energy-outlook-2022 | 524 pages | October 2022 |
-| EU parliament | The environmental impacts of plastics and micro plastics use, waste and polution EU and national measures | https://www.europarl.europa.eu/thinktank/en/document/IPOL_STU(2020)658279 | 76 pages | October 2020 |
+IPCC | Summary for Policymakers. In: Climate Change 2021: The Physical Science Basis. Contribution of the WGI to the AR6 of the IPCC. | https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_SPM.pdf | 32 | 2021
+IPCC | Full Report. In: Climate Change 2021: The Physical Science Basis. Contribution of the WGI to the AR6 of the IPCC. | https://report.ipcc.ch/ar6/wg1/IPCC_AR6_WGI_FullReport.pdf | 2409 | 2021
+IPCC | Technical Summary. In: Climate Change 2021: The Physical Science Basis. Contribution of the WGI to the AR6 of the IPCC. | https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_TS.pdf | 112 | 2021
+IPCC | Summary for Policymakers. In: Climate Change 2022: Impacts, Adaptation and Vulnerability. Contribution of the WGII to the AR6 of the IPCC. | https://www.ipcc.ch/report/ar6/wg2/downloads/report/IPCC_AR6_WGII_SummaryForPolicymakers.pdf | 34 | 2022
+IPCC | Technical Summary. In: Climate Change 2022: Impacts, Adaptation and Vulnerability. Contribution of the WGII to the AR6 of the IPCC. | https://www.ipcc.ch/report/ar6/wg2/downloads/report/IPCC_AR6_WGII_TechnicalSummary.pdf | 84 | 2022
+IPCC | Full Report. In: Climate Change 2022: Impacts, Adaptation and Vulnerability. Contribution of the WGII to the AR6 of the IPCC. | https://report.ipcc.ch/ar6/wg2/IPCC_AR6_WGII_FullReport.pdf | 3068 | 2022
+IPCC | Summary for Policymakers. In: Climate Change 2022: Mitigation of Climate Change. Contribution of the WGIII to the AR6 of the IPCC. | https://www.ipcc.ch/report/ar6/wg3/downloads/report/IPCC_AR6_WGIII_SummaryForPolicymakers.pdf | 50 | 2022
+IPCC | Technical Summary. In: Climate Change 2022: Mitigation of Climate Change. Contribution of the WGIII to the AR6 of the IPCC. | https://www.ipcc.ch/report/ar6/wg3/downloads/report/IPCC_AR6_WGIII_TechnicalSummary.pdf | 102 | 2022
+IPCC | Full Report. In: Climate Change 2022: Mitigation of Climate Change. Contribution of the WGIII to the AR6 of the IPCC. | https://www.ipcc.ch/report/ar6/wg3/downloads/report/IPCC_AR6_WGIII_FullReport.pdf | 2258 | 2022
+IPCC | Summary for Policymakers. In: Global Warming of 1.5Â°C. An IPCC Special Report on the impacts of global warming of 1.5Â°C above pre-industrial levels and related global greenhouse gas emission pathways, in the context of strengthening the global response to the threat of climate change, sustainable development, and efforts to eradicate poverty. | https://www.ipcc.ch/site/assets/uploads/sites/2/2022/06/SPM_version_report_LR.pdf | 24 | 2018
+IPCC | Summary for Policymakers. In: Climate Change and Land: an IPCC special report on climate change, desertification, land degradation, sustainable land management, food security, and greenhouse gas fluxes in terrestrial ecosystems. | https://www.ipcc.ch/site/assets/uploads/sites/4/2022/11/SRCCL_SPM.pdf | 36 | 2019
+IPCC | Summary for Policymakers. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/01_SROCC_SPM_FINAL.pdf | 36 | 2019
+IPCC | Technical Summary. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/02_SROCC_TS_FINAL.pdf | 34 | 2019
+IPCC | Chapter 1 - Framing and Context of the Report. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/03_SROCC_Ch01_FINAL.pdf | 60 | 2019
+IPCC | Chapter 2 - High Mountain Areas. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/04_SROCC_Ch02_FINAL.pdf | 72 | 2019
+IPCC | Chapter 3 - Polar Regions. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/05_SROCC_Ch03_FINAL.pdf | 118 | 2019
+IPCC | Chapter 4 - Sea Level Rise and Implications for Low-Lying Islands, Coasts and Communities. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/06_SROCC_Ch04_FINAL.pdf | 126 | 2019
+IPCC | Chapter 5 -  Changing Ocean, Marine Ecosystems, and Dependent Communities. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/07_SROCC_Ch05_FINAL.pdf | 142 | 2019
+IPCC | Chapter 6 - Extremes, Abrupt Changes and Managing Risk. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/08_SROCC_Ch06_FINAL.pdf | 68 | 2019
+IPCC | Cross-Chapter Box 9: Integrative Cross-Chapter Box on Low-Lying Islands and Coasts. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2019/11/11_SROCC_CCB9-LLIC_FINAL.pdf | 18 | 2019
+IPCC | Annex I: Glossary [Weyer, N.M. (ed.)]. In: IPCC Special Report on the Ocean and Cryosphere in a Changing Climate. | https://www.ipcc.ch/site/assets/uploads/sites/3/2022/03/10_SROCC_AnnexI-Glossary_FINAL.pdf | 28 | 2019
+IPBES | Full Report. Global assessment report on biodiversity and ecosystem services of the IPBES. | https://zenodo.org/record/6417333/files/202206_IPBES%20GLOBAL%20REPORT_FULL_DIGITAL_MARCH%202022.pdf | 1148 | 2019
+IPBES | Summary for Policymakers. Global assessment report on biodiversity and ecosystem services of the IPBES (Version 1). | https://zenodo.org/record/3553579/files/ipbes_global_assessment_report_summary_for_policymakers.pdf | 60 | 2019
+IPBES | Full Report. Thematic assessment of the sustainable use of wild species of the IPBES. | https://zenodo.org/record/7755805/files/IPBES_ASSESSMENT_SUWS_FULL_REPORT.pdf | 1008 | 2022
+IPBES | Summary for Policymakers. Summary for policymakers of the thematic assessment of the sustainable use of wild species of the IPBES. | https://zenodo.org/record/7411847/files/EN_SPM_SUSTAINABLE%20USE%20OF%20WILD%20SPECIES.pdf | 44 | 2022
+IPBES | Full Report. Regional Assessment Report on Biodiversity and Ecosystem Services for Africa. | https://zenodo.org/record/3236178/files/ipbes_assessment_report_africa_EN.pdf | 494 | 2018
+IPBES | Summary for Policymakers. Regional Assessment Report on Biodiversity and Ecosystem Services for Africa. | https://zenodo.org/record/3236189/files/ipbes_assessment_spm_africa_EN.pdf | 52 | 2018
+IPBES | Full Report. Regional Assessment Report on Biodiversity and Ecosystem Services for the Americas. | https://zenodo.org/record/3236253/files/ipbes_assessment_report_americas_EN.pdf | 660 | 2018
+IPBES | Summary for Policymakers. Regional Assessment Report on Biodiversity and Ecosystem Services for the Americas. | https://zenodo.org/record/3236292/files/ipbes_assessment_spm_americas_EN.pdf | 44 | 2018
+IPBES | Full Report. Regional Assessment Report on Biodiversity and Ecosystem Services for Asia and the Pacific. | https://zenodo.org/record/3237374/files/ipbes_assessment_report_ap_EN.pdf | 616 | 2018
+IPBES | Summary for Policymakers. Regional Assessment Report on Biodiversity and Ecosystem Services for Asia and the Pacific. | https://zenodo.org/record/3237383/files/ipbes_assessment_spm_ap_EN.pdf | 44 | 2018
+IPBES | Full Report. Regional Assessment Report on Biodiversity and Ecosystem Services for Europe and Central Asia. | https://zenodo.org/record/3237429/files/ipbes_assessment_report_eca_EN.pdf | 894 | 2018
+IPBES | Summary for Policymakers. Regional Assessment Report on Biodiversity and Ecosystem Services for Europe and Central Asia. | https://zenodo.org/record/3237468/files/ipbes_assessment_spm_eca_EN.pdf | 52 | 2018
+IPBES | Full Report. Assessment Report on Land Degradation and Restoration. | https://zenodo.org/record/3237393/files/ipbes_assessment_report_ldra_EN.pdf | 748 | 2018
+IPBES | Summary for Policymakers. Assessment Report on Land Degradation and Restoration. | https://zenodo.org/record/3237393/files/ipbes_assessment_report_ldra_EN.pdf | 48 | 2018
 
 ## 🛢️ Carbon Footprint
 

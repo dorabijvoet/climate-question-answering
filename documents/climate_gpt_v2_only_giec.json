@@ -1,0 +1,1 @@
+{"sql_url": "sqlite:///climate_gpt_v2_only_giec.db", "faiss_index_factory_str": "Flat", "index": "climate_gpt_v2", "similarity": "dot_product", "embedding_dim": 768}
