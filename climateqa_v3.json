@@ -1,0 +1,1 @@
+{"sql_url": "sqlite:///climateqa_v3.db", "faiss_index_factory_str": "Flat", "index": "climateqa_v3", "similarity": "dot_product", "embedding_dim": 768}
