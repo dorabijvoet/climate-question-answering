@@ -550,4 +550,4 @@ For developers, the methodology used is detailed below :
 
     demo.queue(concurrency_count=16)
 
-demo.launch(server_port = 8080)
+demo.launch()
