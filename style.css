@@ -1,3 +1,8 @@
+
+:root {
+    --user-image: url('https://ih1.redbubble.net/image.4776899543.6215/st,small,507x507-pad,600x600,f8f8f8.jpg');
+  }
+
 .warning-box {
     background-color: #fff3cd;
     border: 1px solid #ffeeba;
@@ -43,3 +48,117 @@
 .message{
     font-size:14px !important;
 }
+
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin:20px;
+}
+
+.card-content {
+    padding: 20px;
+}
+
+.card-content h2 {
+    font-size: 14px !important;
+    font-weight: bold;
+    margin-bottom: 10px;
+    margin-top:0px !important;
+    color:#577b9b!important;;
+}
+
+.card-content p {
+    font-size: 12px;
+    margin-bottom: 0;
+}
+
+.card-footer {
+    background-color: #f4f4f4;
+    font-size: 10px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-footer span {
+    flex-grow: 1;
+    text-align: left;
+    color: #999 !important;
+}
+
+.pdf-link {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    text-decoration: none!important;
+    font-size: 14px;
+}
+
+
+
+.message.user{
+    background-color:#7494b0 !important;
+    border:none;
+    color:white!important;
+}
+
+.message.bot{
+    background-color:#f2f2f7 !important;
+    border:none;
+}
+
+.gallery-item > div:hover{
+    background-color:#7494b0 !important;
+    color:white!important;
+}
+
+.gallery-item:hover{
+    border:#7494b0 !important;
+}
+
+.gallery-item > div{
+    background-color:white !important;
+    color:#577b9b!important;
+}
+
+.label{
+    color:#577b9b!important;
+}
+
+.paginate{
+    color:#577b9b!important;
+}
+
+
+label > span{
+    background-color:white !important;
+    color:#577b9b!important;
+}
+
+/* Pseudo-element for the circularly cropped picture */
+.message.bot::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 30px;
+    height: 30px;
+    background-image: var(--user-image);
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    z-index: 10;
+  }
+  
+  
