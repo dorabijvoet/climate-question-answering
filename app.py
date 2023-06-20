@@ -229,7 +229,7 @@ def chat(
 
 
         response = openai.Completion.create(
-            engine="climateGPT",
+            engine="EkiGPT",
             prompt=to_completion(messages),
             temperature=0,  # deterministic
             stream=True,
