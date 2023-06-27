@@ -296,6 +296,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     # Gradio
     gr.Markdown("<h1><center>Climate Q&A 🌍</center></h1>")
     gr.Markdown("<h4><center>Ask climate-related questions to the IPCC reports</center></h4>")
+    gr.Markdown("<h2 style='color:red'><center>WARNING - We have a small temporary bug on HF platform, you can use the new v1.0 version in the meantime https://climateqa.com</center></h4>")
 
 
     with gr.Row():
