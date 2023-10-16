@@ -347,11 +347,11 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
         with gr.Row():
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(height=400,show_copy_button=True,show_label = False)
+                bot = gr.Chatbot(height=400,show_copy_button=True,show_label = False,elem_id="chatbot")
 
                 with gr.Row():
                     with gr.Column(scale = 7):
-                        textbox=gr.Textbox(placeholder="Ask me a question about climate change or biodiversity in any language, and press Enter",show_label=False)
+                        textbox=gr.Textbox(placeholder="Ask me a question about climate change or biodiversity in any language!",show_label=False)
                     with gr.Column(scale = 1):
                         submit_button = gr.Button("Submit")
                 
