@@ -4,3 +4,4 @@ __pycache__/app.cpython-39.pyc
 __pycache__/utils.cpython-38.pyc
 
 notebooks/
+*.pyc

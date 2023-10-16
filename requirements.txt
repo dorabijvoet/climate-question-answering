@@ -1,6 +1,4 @@
-faiss-cpu==1.7.2
-farm-haystack==1.14.0
-gradio==3.22.1
+gradio==3.47.1
 openai==0.27.0
 azure-storage-file-share==12.11.1
 python-dotenv==1.0.0

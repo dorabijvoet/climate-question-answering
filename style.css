@@ -1,7 +1,7 @@
 
-:root {
+/* :root {
     --user-image: url('https://ih1.redbubble.net/image.4776899543.6215/st,small,507x507-pad,600x600,f8f8f8.jpg');
-  }
+  } */
 
 .warning-box {
     background-color: #fff3cd;
@@ -147,7 +147,7 @@ label > span{
 }
 
 /* Pseudo-element for the circularly cropped picture */
-.message.bot::before {
+/* .message.bot::before {
     content: '';
     position: absolute;
     top: -10px;
@@ -160,5 +160,8 @@ label > span{
     border-radius: 50%;
     z-index: 10;
   }
-  
-  
+   */
+   
+label.selected{
+  background:none !important;
+}
