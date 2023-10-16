@@ -143,9 +143,9 @@ def answer_bot(message,history,audience):
     elif audience == "General public":
         audience_prompt = audience_prompts["general"]
     elif audience == "Experts":
-        audience_prompt = audience_prompts["expert"]
+        audience_prompt = audience_prompts["experts"]
     else:
-        audience_prompt = audience_prompts["expert"]
+        audience_prompt = audience_prompts["experts"]
 
     # history_langchain_format = []
     # for human, ai in history:
