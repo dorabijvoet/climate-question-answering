@@ -4,3 +4,4 @@ azure-storage-file-share==12.11.1
 python-dotenv==1.0.0
 langchain==0.0.295
 pinecone-client==2.2.1
+sentence-transformers==2.2.2
