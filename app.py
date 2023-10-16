@@ -446,7 +446,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 #---------------------------------------------------------------------------------------
 
 
-    with gr.Tab("ℹ️ About ClimateQ&A"):
+    with gr.Tab("ℹ️ About ClimateQ&A",elem_classes = "max-height"):
         with gr.Row():
             with gr.Column(scale=1):
                 gr.Markdown(
@@ -536,7 +536,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     # openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
     # openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
-    with gr.Tab("📚 Sources"):
+    with gr.Tab("📚 Sources",elem_classes = "max-height"):
         gr.Markdown("""
     | Source | Report | URL | Number of pages | Release date |
     | --- | --- | --- | --- | --- |
