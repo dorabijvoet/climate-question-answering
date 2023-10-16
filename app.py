@@ -137,7 +137,6 @@ def answer_user(message,history):
 
 
 def answer_bot(message,history):
-    print("YO",message,history)
     # history_langchain_format = []
     # for human, ai in history:
     #     history_langchain_format.append(HumanMessage(content=human))
@@ -330,8 +329,8 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     # user_id_state = gr.State([user_id])
 
     # Gradio
-    gr.Markdown("<h1><center>Climate Q&A 🌍</center></h1>")
-    gr.Markdown("<h4><center>Ask climate-related questions to the IPCC and IPBES reports using AI</center></h4>")
+    # gr.Markdown("<h1><center>Climate Q&A 🌍</center></h1>")
+    # gr.Markdown("<h4><center>Ask climate-related questions to the IPCC and IPBES reports using AI</center></h4>")
 
     with gr.Tab("💬 Chatbot"):
 
@@ -402,7 +401,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                 # )
 
                 gr.Markdown("### Sources")
-                sources_textbox = gr.Markdown(show_label=False)
+                sources_textbox = gr.Markdown(show_label=False, elem_id="sources-textbox")
 
             # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
 
