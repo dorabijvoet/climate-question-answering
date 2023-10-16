@@ -342,66 +342,65 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     # gr.Markdown("<h1><center>Climate Q&A 🌍</center></h1>")
     # gr.Markdown("<h4><center>Ask climate-related questions to the IPCC and IPBES reports using AI</center></h4>")
 
-    with gr.Tab("💬 Chatbot"):
+    with gr.Tab("🌍 ClimateQ&A"):
 
-        with gr.Row():
+        with gr.Row(elem_id="chatbot-row"):
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(height=600,show_copy_button=True,show_label = False,elem_id="chatbot")
+                bot = gr.Chatbot(height="100%",show_copy_button=True,show_label = False,elem_id="chatbot")
+                textbox=gr.Textbox(placeholder="Ask me a question about climate change or biodiversity in any language!",show_label=False)
+                submit_button = gr.Button("Submit")
 
-                with gr.Row():
-                    with gr.Column(scale = 7):
-                        textbox=gr.Textbox(placeholder="Ask me a question about climate change or biodiversity in any language!",show_label=False)
-                    with gr.Column(scale = 1):
-                        submit_button = gr.Button("Submit")
-                
-                examples_hidden = gr.Textbox(elem_id="hidden-message")
 
-                examples_questions = gr.Examples(
-                    [
-                        "Is climate change caused by humans?",
-                        "What evidence do we have of climate change?",
-                        "What are the impacts of climate change?",
-                        "Can climate change be reversed?",
-                        "What is the difference between climate change and global warming?",
-                        "What can individuals do to address climate change?",
-                        "What are the main causes of climate change?",
-                        "What is the Paris Agreement and why is it important?",
-                        "Which industries have the highest GHG emissions?",
-                        "Is climate change a hoax created by the government or environmental organizations?",
-                        "What is the relationship between climate change and biodiversity loss?",
-                        "What is the link between gender equality and climate change?",
-                        "Is the impact of climate change really as severe as it is claimed to be?",
-                        "What is the impact of rising sea levels?",
-                        "What are the different greenhouse gases (GHG)?",
-                        "What is the warming power of methane?",
-                        "What is the jet stream?",
-                        "What is the breakdown of carbon sinks?",
-                        "How do the GHGs work ? Why does temperature increase ?",
-                        "What is the impact of global warming on ocean currents?",
-                        "How much warming is possible in 2050?",
-                        "What is the impact of climate change in Africa?",
-                        "Will climate change accelerate diseases and epidemics like COVID?",
-                        "What are the economic impacts of climate change?",
-                        "How much is the cost of inaction ?",
-                        "What is the relationship between climate change and poverty?",
-                        "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
-                        "Is economic growth possible? What do you think about degrowth?",
-                        "Will technology save us?",
-                        "Is climate change a natural phenomenon ?",
-                        "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
-                        "Is the scientific consensus on climate change really as strong as it is claimed to be?",
-                    ],
-                    [examples_hidden],
-                    examples_per_page=10,
-                )
+            with gr.Column(scale=1, variant="panel",elem_id = "right-panel"):
 
-            with gr.Column(scale=1, variant="panel"):
+                with gr.Tab("📝 Examples",elem_id = "tab-examples"):
+                                    
+                    examples_hidden = gr.Textbox(elem_id="hidden-message")
 
-                with gr.Tab("📚 Citations"):
+                    examples_questions = gr.Examples(
+                        [
+                            "Is climate change caused by humans?",
+                            "What evidence do we have of climate change?",
+                            "What are the impacts of climate change?",
+                            "Can climate change be reversed?",
+                            "What is the difference between climate change and global warming?",
+                            "What can individuals do to address climate change?",
+                            "What are the main causes of climate change?",
+                            "What is the Paris Agreement and why is it important?",
+                            "Which industries have the highest GHG emissions?",
+                            "Is climate change a hoax created by the government or environmental organizations?",
+                            "What is the relationship between climate change and biodiversity loss?",
+                            "What is the link between gender equality and climate change?",
+                            "Is the impact of climate change really as severe as it is claimed to be?",
+                            "What is the impact of rising sea levels?",
+                            "What are the different greenhouse gases (GHG)?",
+                            "What is the warming power of methane?",
+                            "What is the jet stream?",
+                            "What is the breakdown of carbon sinks?",
+                            "How do the GHGs work ? Why does temperature increase ?",
+                            "What is the impact of global warming on ocean currents?",
+                            "How much warming is possible in 2050?",
+                            "What is the impact of climate change in Africa?",
+                            "Will climate change accelerate diseases and epidemics like COVID?",
+                            "What are the economic impacts of climate change?",
+                            "How much is the cost of inaction ?",
+                            "What is the relationship between climate change and poverty?",
+                            "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
+                            "Is economic growth possible? What do you think about degrowth?",
+                            "Will technology save us?",
+                            "Is climate change a natural phenomenon ?",
+                            "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
+                            "Is the scientific consensus on climate change really as strong as it is claimed to be?",
+                        ],
+                        [examples_hidden],
+                        examples_per_page=10,
+                    )
+
+                with gr.Tab("📚 Citations",elem_id = "tab-citations"):
                     sources_textbox = gr.Markdown(show_label=False, elem_id="sources-textbox")
 
-                with gr.Tab("⚙️ Configuration"):
+                with gr.Tab("⚙️ Configuration",elem_id = "tab-config"):
 
                     gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
 
@@ -613,5 +612,4 @@ Or around 2 to 4 times more than a typical Google search.
 
     demo.queue(concurrency_count=16)
 
-if __name__ == "__main__":
-    demo.launch()
+demo.launch()

@@ -166,7 +166,21 @@ label.selected{
   background:none !important;
 }
 
+
+div#tab-examples{
+    height:calc(100vh - 190px) !important;
+    overflow-y: auto;
+}
+
 div#sources-textbox{
-    height:100vh;
+    height:calc(100vh - 190px) !important;
     overflow-y: auto;
   }
+
+div#chatbot-row{
+    height:calc(100vh - 120px);
+}
+
+div#chatbot{
+    height:calc(100vh - 270px)
+}

@@ -1,9 +1,11 @@
 from langchain.chat_models import AzureChatOpenAI
-
-# LOAD ENVIRONMENT VARIABLES
-from dotenv import load_dotenv
 import os
-load_dotenv()
+# LOAD ENVIRONMENT VARIABLES
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except:
+    pass
 
 
 def get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = False, **kwargs):

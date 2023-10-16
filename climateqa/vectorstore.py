@@ -1,14 +1,16 @@
 # Pinecone
 # More info at https://docs.pinecone.io/docs/langchain
 # And https://python.langchain.com/docs/integrations/vectorstores/pinecone
-
+import os
 import pinecone
 from langchain.vectorstores import Pinecone
 
 # LOAD ENVIRONMENT VARIABLES
-from dotenv import load_dotenv
-import os
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except:
+    pass
 
 
 def get_pinecone_vectorstore(embeddings,text_key = "content"):
