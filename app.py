@@ -588,6 +588,21 @@ Carbon Emissions are **relatively low but not negligible** compared to other usa
 Or around 2 to 4 times more than a typical Google search. 
 """
     )
+        
+    with gr.Tab("🪄 Changelog"):
+        gr.Markdown("""
+
+##### v1.1.0 - *2023-10-16*
+- Hugging Face version is finally up to date
+- Switched all python code to langchain codebase for cleaner code, easier maintenance and future features
+- Updated GPT model to August version
+                    
+##### v1.0.0 - *2023-05-11*
+- First version of clean interface on https://climateqa.com
+- Add children mode on https://climateqa.com
+- Add follow-up questions https://climateqa.com
+"""
+    )
 
     demo.queue(concurrency_count=16)
 
