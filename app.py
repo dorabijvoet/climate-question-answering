@@ -389,17 +389,17 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 
             with gr.Column(scale=1, variant="panel"):
 
-                dropdown_sources = gr.CheckboxGroup(
-                    ["IPCC", "IPBES"],
-                    label="Select reports",
-                    value = ["IPCC"],
-                )
+                # dropdown_sources = gr.CheckboxGroup(
+                #     ["IPCC", "IPBES"],
+                #     label="Select reports",
+                #     value = ["IPCC"],
+                # )
 
-                dropdown_audience = gr.Dropdown(
-                    ["Children","Adult","Experts"],
-                    label="Select audience",
-                    value="Experts",
-                )
+                # dropdown_audience = gr.Dropdown(
+                #     ["Children","Adult","Experts"],
+                #     label="Select audience",
+                #     value="Experts",
+                # )
 
                 gr.Markdown("### Sources")
                 sources_textbox = gr.Markdown(show_label=False)
