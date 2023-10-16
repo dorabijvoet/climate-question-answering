@@ -136,7 +136,17 @@ def answer_user(message,history):
     return message, history + [[message, None]]
 
 
-def answer_bot(message,history):
+def answer_bot(message,history,audience):
+
+    if audience == "Children":
+        audience_prompt = audience_prompts["children"]
+    elif audience == "General public":
+        audience_prompt = audience_prompts["general"]
+    elif audience == "Experts":
+        audience_prompt = audience_prompts["expert"]
+    else:
+        audience_prompt = audience_prompts["expert"]
+
     # history_langchain_format = []
     # for human, ai in history:
     #     history_langchain_format.append(HumanMessage(content=human))
@@ -144,7 +154,7 @@ def answer_bot(message,history):
     # history_langchain_format.append(HumanMessage(content=message)
     # for next_token, content in stream(message):
     #     yield(content)
-    output = chain({"query":message,"audience":"expert climate scientist"})
+    output = chain({"query":message,"audience":audience_prompt})
     question = output["question"]
     sources = output["source_documents"]
 
@@ -337,7 +347,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
         with gr.Row():
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(height=400)
+                bot = gr.Chatbot(height=400,show_copy_button=True,show_label = False)
 
                 with gr.Row():
                     with gr.Column(scale = 7):
@@ -388,32 +398,35 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 
             with gr.Column(scale=1, variant="panel"):
 
-                # dropdown_sources = gr.CheckboxGroup(
-                #     ["IPCC", "IPBES"],
-                #     label="Select reports",
-                #     value = ["IPCC"],
-                # )
+                with gr.Tab("📚 Citations"):
+                    sources_textbox = gr.Markdown(show_label=False, elem_id="sources-textbox")
 
-                # dropdown_audience = gr.Dropdown(
-                #     ["Children","Adult","Experts"],
-                #     label="Select audience",
-                #     value="Experts",
-                # )
+                with gr.Tab("⚙️ Configuration"):
 
-                gr.Markdown("### Sources")
-                sources_textbox = gr.Markdown(show_label=False, elem_id="sources-textbox")
+                    gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
+
+                    dropdown_sources = gr.CheckboxGroup(
+                        ["IPCC", "IPBES"],
+                        label="Select reports",
+                    )
+
+                    dropdown_audience = gr.Dropdown(
+                        ["Children","General public","Experts"],
+                        label="Select audience",
+                    )
+
 
             # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
 
             textbox.submit(answer_user, [textbox, bot], [textbox, bot], queue=False).then(
-                    answer_bot, [textbox,bot], [textbox,bot,sources_textbox]
+                    answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
                 )
             examples_hidden.change(answer_user, [examples_hidden, bot], [textbox, bot], queue=False).then(
-                    answer_bot, [textbox,bot], [textbox,bot,sources_textbox]
+                    answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
                 )
         
             submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=False).then(
-                    answer_bot, [textbox,bot], [textbox,bot,sources_textbox]
+                    answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
                 )
 
 
@@ -448,12 +461,6 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     </div>
     ClimateQ&A harnesses modern OCR techniques to parse and preprocess IPCC reports. By leveraging state-of-the-art question-answering algorithms, <i>ClimateQ&A is able to sift through the extensive collection of climate scientific reports and identify relevant passages in response to user inquiries</i>. Furthermore, the integration of the ChatGPT API allows ClimateQ&A to present complex data in a user-friendly manner, summarizing key points and facilitating communication of climate science to a wider audience.
     </div>
-
-    <div class="warning-box">
-    Version 0.2-beta - This tool is under active development
-    </div>
-
-
     """
                 )
 
@@ -595,6 +602,7 @@ Or around 2 to 4 times more than a typical Google search.
 - Hugging Face version is finally up to date
 - Switched all python code to langchain codebase for cleaner code, easier maintenance and future features
 - Updated GPT model to August version
+- Use of HuggingFace embed on https://climateqa.com to avoid demultiplying deployments
                     
 ##### v1.0.0 - *2023-05-11*
 - First version of clean interface on https://climateqa.com
