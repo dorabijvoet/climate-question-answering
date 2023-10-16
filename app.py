@@ -599,7 +599,7 @@ Or around 2 to 4 times more than a typical Google search.
         gr.Markdown("""
 
 ##### v1.1.0 - *2023-10-16*
-- Hugging Face version is finally up to date
+- ClimateQ&A on Hugging Face is finally working again with all the new features !
 - Switched all python code to langchain codebase for cleaner code, easier maintenance and future features
 - Updated GPT model to August version
 - Use of HuggingFace embed on https://climateqa.com to avoid demultiplying deployments
