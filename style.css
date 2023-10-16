@@ -141,10 +141,11 @@ a {
 }
 
 
-label > span{
-    background-color:white !important;
-    color:#577b9b!important;
-}
+
+span[data-testid="block-info"]{
+    background:none !important;
+    color:#577b9b;
+  }
 
 /* Pseudo-element for the circularly cropped picture */
 /* .message.bot::before {
