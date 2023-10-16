@@ -347,7 +347,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
         with gr.Row():
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(height=400,show_copy_button=True,show_label = False,elem_id="chatbot")
+                bot = gr.Chatbot(height=600,show_copy_button=True,show_label = False,elem_id="chatbot")
 
                 with gr.Row():
                     with gr.Column(scale = 7):
