@@ -108,17 +108,17 @@ a {
 
 
 .message.user{
-    background-color:#7494b0 !important;
+    /* background-color:#7494b0 !important; */
     border:none;
-    color:white!important;
+    /* color:white!important; */
 }
 
 .message.bot{
-    background-color:#f2f2f7 !important;
+    /* background-color:#f2f2f7 !important; */
     border:none;
 }
 
-.gallery-item > div:hover{
+/* .gallery-item > div:hover{
     background-color:#7494b0 !important;
     color:white!important;
 }
@@ -134,18 +134,18 @@ a {
 
 .label{
     color:#577b9b!important;
-}
+} */
 
-.paginate{
+/* .paginate{
     color:#577b9b!important;
-}
+} */
 
 
 
-span[data-testid="block-info"]{
+/* span[data-testid="block-info"]{
     background:none !important;
     color:#577b9b;
-  }
+  } */
 
 /* Pseudo-element for the circularly cropped picture */
 /* .message.bot::before {

@@ -33,8 +33,9 @@ except:
     pass
 
 # Set up Gradio Theme
-theme = gr.themes.Soft(
-    primary_hue="sky",
+theme = gr.themes.Base(
+    primary_hue="blue",
+    secondary_hue="red",
     font=[gr.themes.GoogleFont("Poppins"), "ui-sans-serif", "system-ui", "sans-serif"],
 )
 
@@ -63,10 +64,31 @@ user_id = create_user_id(10)
 # ClimateQ&A core functions
 #---------------------------------------------------------------------------
 
+from langchain.callbacks.base import BaseCallbackHandler
+from queue import Queue, Empty
+from threading import Thread
+from collections.abc import Generator
+
+# Create a Queue
+Q = Queue()
+
+class QueueCallback(BaseCallbackHandler):
+    """Callback handler for streaming LLM responses to a queue."""
+
+    def __init__(self, q):
+        self.q = q
+
+    def on_llm_new_token(self, token: str, **kwargs: any) -> None:
+        self.q.put(token)
+
+    def on_llm_end(self, *args, **kwargs: any) -> None:
+        return self.q.empty()
+    
+
 # Create embeddings function and LLM
 embeddings_function = HuggingFaceEmbeddings(model_name = "sentence-transformers/multi-qa-mpnet-base-dot-v1")
-llm = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = False,
-    callbacks=[StreamingStdOutCallbackHandler()],            
+llm = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
+    callbacks=[QueueCallback(Q)],            
 )
 
 # Create vectorstore and retriever
@@ -80,56 +102,49 @@ chain = load_climateqa_chain(retriever,llm)
 # From https://github.com/gradio-app/gradio/issues/5345
 #---------------------------------------------------------------------------
 
-# from langchain.callbacks.base import BaseCallbackHandler
-# from queue import Queue, Empty
-# from threading import Thread
-# from collections.abc import Generator
 
-# class QueueCallback(BaseCallbackHandler):
-#     """Callback handler for streaming LLM responses to a queue."""
 
-#     def __init__(self, q):
-#         self.q = q
+# Create a function that will return our generator
+def stream(chain, input_text) -> Generator:
+    with Q.mutex:
+        Q.queue.clear()
+    job_done = object()
 
-#     def on_llm_new_token(self, token: str, **kwargs: any) -> None:
-#         self.q.put(token)
+    # Create a function to call - this will run in a thread
+    def task():
+        answer = chain({"query":input_text,"audience":"expert climate scientist"})
+        Q.put(job_done)
 
-#     def on_llm_end(self, *args, **kwargs: any) -> None:
-#         return self.q.empty()
-    
+    # Create a thread and start the function
+    t = Thread(target=task)
+    t.start()
 
-# def stream(input_text) -> Generator:
-#     # Create a Queue
-#     q = Queue()
-#     job_done = object()
+    content = ""
 
-#     llm = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
-#         callbacks=[QueueCallback(q)],            
-#     )
+    # Get each new token from the queue and yield for our generator
+    while True:
+        try:
+            next_token = Q.get(True, timeout=1)
+            if next_token is job_done:
+                break
+            content += next_token
+            yield next_token, content
+        except Empty:
+            continue
 
-#     chain = load_climateqa_chain(retriever,llm)
 
-#     # Create a funciton to call - this will run in a thread
-#     def task():
-#         answer = chain({"query":input_text,"audience":"expert climate scientist"})
-#         q.put(job_done)
+def stream_sentences(chain, input_text) -> Generator:
+    """wrapper to stream function"""
+    sentence = ""
+    for next_token, content in stream(chain, input_text):
+        sentence += next_token
+        if "\n\n" in next_token:
+            yield sentence
+            sentence = ""
+    if sentence:
+        yield sentence
 
-#     # Create a thread and start the function
-#     t = Thread(target=task)
-#     t.start()
 
-#     content = ""
-
-#     # Get each new token from the queue and yield for our generator
-#     while True:
-#         try:
-#             next_token = q.get(True, timeout=1)
-#             if next_token is job_done:
-#                 break
-#             content += next_token
-#             yield next_token, content
-#         except Empty:
-#             continue
 
 
 def answer_user(message,history):
@@ -154,6 +169,7 @@ def answer_bot(message,history,audience):
     # history_langchain_format.append(HumanMessage(content=message)
     # for next_token, content in stream(message):
     #     yield(content)
+
     output = chain({"query":message,"audience":audience_prompt})
     question = output["question"]
     sources = output["source_documents"]
@@ -347,7 +363,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
         with gr.Row(elem_id="chatbot-row"):
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(height="100%",show_copy_button=True,show_label = False,elem_id="chatbot")
+                bot = gr.Chatbot(show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = (None,"assets/logo4.png"))
                 textbox=gr.Textbox(placeholder="Ask me a question about climate change or biodiversity in any language!",show_label=False)
                 submit_button = gr.Button("Submit")
 
