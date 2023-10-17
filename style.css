@@ -22,11 +22,21 @@
     margin-top:20px;
     padding: 15px 20px;
     font-size: 14px;
-    color: #006064;
     display: inline-block;
     margin-bottom: 15px;
     width: auto;
+    color:black !important;
 }
+
+body.dark .warning-box * {
+    color:black !important;
+}
+
+
+body.dark .tip-box * {
+    color:black !important;
+}
+
 
 .tip-box-title {
     font-weight: bold;
@@ -167,27 +177,70 @@ label.selected{
   background:none !important;
 }
 
-
-div#tab-examples{
-    height:calc(100vh - 190px) !important;
-    overflow-y: auto;
-}
-
-div#sources-textbox{
-    height:calc(100vh - 190px) !important;
-    overflow-y: auto;
-  }
-
-div#chatbot-row{
-    height:calc(100vh - 120px);
-}
-
-div#chatbot{
-    height:calc(100vh - 270px);
+#submit-button{
+    padding:0px !important;
 }
 
 
-.max-height{
-    height:calc(100vh - 120px);
-    overflow-y: auto;
+@media screen and (min-width: 1024px) {
+    div#tab-examples{
+        height:calc(100vh - 190px) !important;
+        overflow-y: auto;
+    }
+
+    div#sources-textbox{
+        height:calc(100vh - 190px) !important;
+        overflow-y: auto;
+    }
+
+    div#chatbot-row{
+        height:calc(100vh - 120px) !important;
+    }
+
+    div#chatbot{
+        height:calc(100vh - 220px) !important;
+    }
+
+    .max-height{
+        height:calc(100vh - 120px) !important;
+        overflow-y: auto;
+    }
+}
+
+footer {
+    visibility: hidden;
+    display:none;
+}
+
+
+@media screen and (max-width: 767px) {
+    /* Your mobile-specific styles go here */
+
+    div#chatbot{
+        height:500px !important;
+    }
+
+    #submit-button{
+        padding:0px !important;
+        min-width: 80px;
+    }
+
+    /* ... add other mobile-specific styles ... */
+}
+
+
+body.dark .card{
+    background-color: #374151;
+}
+
+body.dark .card-content h2{
+    color:#f4dbd3 !important;
+}
+
+body.dark .card-footer {
+    background-color: #404652;
+}
+
+body.dark .card-footer span {
+    color:white !important;
 }
