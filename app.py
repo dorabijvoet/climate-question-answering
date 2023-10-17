@@ -363,7 +363,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
         with gr.Row(elem_id="chatbot-row"):
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = (None,"assets/logo4.png"))
+                bot = gr.Chatbot(show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = ("assets/logo4.png",None))
                 
                 with gr.Row(elem_id = "input-message"):
                     textbox=gr.Textbox(placeholder="Ask me anything here!",show_label=False,scale=7)
