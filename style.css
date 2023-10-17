@@ -225,6 +225,22 @@ footer {
         min-width: 80px;
     }
 
+    /* This will hide all list items */
+    div.tab-nav button {
+        display: none !important;
+    }
+
+    /* This will show only the first list item */
+    div.tab-nav button:first-child {
+        display: block !important;
+    }
+    
+    /* This will show only the first list item */
+    div.tab-nav button:nth-child(2) {
+        display: block !important;
+    }
+
+
     /* ... add other mobile-specific styles ... */
 }
 
