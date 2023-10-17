@@ -239,7 +239,10 @@ footer {
     div.tab-nav button:nth-child(2) {
         display: block !important;
     }
-
+    
+    #right-panel button{
+        display: block !important;
+    }
 
     /* ... add other mobile-specific styles ... */
 }
