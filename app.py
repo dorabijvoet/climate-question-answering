@@ -152,6 +152,9 @@ def answer_user(message,history):
 
 def answer_bot(message,history,audience,sources):
 
+    if len(sources) == 0:
+        sources = ["IPCC"]
+
     # if len(message) <= 2:
     #     complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
     #     history[-1][1] += "\n\n" + complete_response
