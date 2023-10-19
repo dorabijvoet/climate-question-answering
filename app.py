@@ -74,6 +74,23 @@ from queue import SimpleQueue
 # # Create a Queue
 # Q = Queue()
 
+import re
+
+def parse_output_llm_with_sources(output):
+    # Split the content into a list of text and "[Doc X]" references
+    content_parts = re.split(r'\[(Doc\s?\d+(?:,\s?Doc\s?\d+)*)\]', output)
+    parts = []
+    for part in content_parts:
+        if part.startswith("Doc"):
+            subparts = part.split(",")
+            subparts = [subpart.lower().replace("doc","").strip() for subpart in subparts]
+            subparts = [f"<span class='doc-ref'><sup>{subpart}</sup></span>" for subpart in subparts]
+            parts.append("".join(subparts))
+        else:
+            parts.append(part)
+    content_parts = "".join(parts)
+    return content_parts
+
 
 
 Q = SimpleQueue()
@@ -119,9 +136,6 @@ llm_streaming = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,strea
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
-retriever = ClimateQARetriever(vectorstore=vectorstore,sources = ["IPCC"],k_summary = 3,k_total = 10)
-chain = load_climateqa_chain(retriever,llm_reformulation,llm_streaming)
-
 
 #---------------------------------------------------------------------------
 # ClimateQ&A Streaming
@@ -131,15 +145,25 @@ chain = load_climateqa_chain(retriever,llm_reformulation,llm_streaming)
 
 from threading import Thread
 
-def threaded_chain(query,audience):
-    response = chain({"query":query,"audience":audience})
-    Q.put(response)
-    Q.put(job_done)
+
 
 def answer_user(message,history):
     return message, history + [[message, None]]
 
-def answer_bot(message,history,audience):
+def answer_bot(message,history,audience,sources):
+
+    # if len(message) <= 2:
+    #     complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
+    #     history[-1][1] += "\n\n" + complete_response
+    #     return "", history, ""
+
+    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,k_summary = 3,k_total = 10)
+    chain = load_climateqa_chain(retriever,llm_reformulation,llm_streaming)
+
+    def threaded_chain(query,audience):
+        response = chain({"query":query,"audience":audience})
+        Q.put(response)
+        Q.put(job_done)
 
     if audience == "Children":
         audience_prompt = audience_prompts["children"]
@@ -187,7 +211,9 @@ def answer_bot(message,history,audience):
             break
 
         elif isinstance(next_item, str):
-            history[-1][1] += next_item
+            new_paragraph = history[-1][1] + next_item
+            new_paragraph = parse_output_llm_with_sources(new_paragraph)
+            history[-1][1] = new_paragraph
             yield "", history, ""
 
     thread.join()
@@ -351,26 +377,29 @@ def log_on_azure(file, logs, share_client):
 
 
 init_prompt = """
-Hello ! I am ClimateQ&A, a conversational assistant designed to help you understand climate change and biodiversity loss. I will answer your questions by **sifting through the IPCC and IPBES scientific reports**.
+Hello, I am ClimateQ&A, a conversational assistant designed to help you understand climate change and biodiversity loss. I will answer your questions by **sifting through the IPCC and IPBES scientific reports**.
 
 💡 How to use
 - **Language**: You can ask me your questions in any language. 
 - **Audience**: You can specify your audience (children, general public, experts) to get a more adapted answer.
 - **Sources**: You can choose to search in the IPCC or IPBES reports, or both.
 
-📚 Limitations
+⚠️ Limitations
 *Please note that the AI is not perfect and may sometimes give irrelevant answers. If you are not satisfied with the answer, please ask a more specific question or report your feedback to help us improve the system.*
 
 ❓ What do you want to learn ?
 """
 
 
+def vote(data: gr.LikeData):
+    if data.liked:
+        print(data.value)
+    else:
+        print(data)
+
+
 with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     # user_id_state = gr.State([user_id])
-
-    # Gradio
-    # gr.Markdown("<h1><center>Climate Q&A 🌍</center></h1>")
-    # gr.Markdown("<h4><center>Ask climate-related questions to the IPCC and IPBES reports using AI</center></h4>")
 
     with gr.Tab("🌍 ClimateQ&A"):
 
@@ -380,6 +409,8 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                 bot = gr.Chatbot(
                     value=[[None,init_prompt]],
                     show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = ("assets/logo4.png",None))
+                
+                # bot.like(vote,None,None)
                 
                 with gr.Row(elem_id = "input-message"):
                     textbox=gr.Textbox(placeholder="Ask me anything here!",show_label=False,scale=7)
@@ -429,6 +460,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                         ],
                         [examples_hidden],
                         examples_per_page=10,
+                        # cache_examples=True,
                     )
 
                 with gr.Tab("📚 Citations",elem_id = "tab-citations"):
@@ -441,24 +473,28 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                     dropdown_sources = gr.CheckboxGroup(
                         ["IPCC", "IPBES"],
                         label="Select reports",
+                        value=["IPCC"],
+                        interactive=True,
                     )
 
                     dropdown_audience = gr.Dropdown(
                         ["Children","General public","Experts"],
                         label="Select audience",
+                        value="Experts",
+                        interactive=True,
                     )
 
 
             # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
 
             textbox.submit(answer_user, [textbox, bot], [textbox, bot], queue=False).then(
-                    answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
+                    answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
                 )
             examples_hidden.change(answer_user, [examples_hidden, bot], [textbox, bot], queue=False).then(
-                    answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
+                    answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
                 )
             submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=False).then(
-                    answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
+                    answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
                 )
 
 
