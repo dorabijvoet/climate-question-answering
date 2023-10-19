@@ -68,88 +68,76 @@ from langchain.callbacks.base import BaseCallbackHandler
 from queue import Queue, Empty
 from threading import Thread
 from collections.abc import Generator
+from langchain.schema import LLMResult
+from typing import Any, Union,Dict,List
+from queue import SimpleQueue
+# # Create a Queue
+# Q = Queue()
 
-# Create a Queue
-Q = Queue()
 
-class QueueCallback(BaseCallbackHandler):
-    """Callback handler for streaming LLM responses to a queue."""
 
-    def __init__(self, q):
+Q = SimpleQueue()
+job_done = object() # signals the processing is done
+
+class StreamingGradioCallbackHandler(BaseCallbackHandler):
+    def __init__(self, q: SimpleQueue):
         self.q = q
 
-    def on_llm_new_token(self, token: str, **kwargs: any) -> None:
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> None:
+        """Run when LLM starts running. Clean the queue."""
+        while not self.q.empty():
+            try:
+                self.q.get(block=False)
+            except Empty:
+                continue
+
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        """Run on new LLM token. Only available when streaming is enabled."""
         self.q.put(token)
 
-    def on_llm_end(self, *args, **kwargs: any) -> None:
-        return self.q.empty()
-    
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        """Run when LLM ends running."""
+        self.q.put(job_done)
+
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> None:
+        """Run when LLM errors."""
+        self.q.put(job_done)
+
+
+
 
 # Create embeddings function and LLM
 embeddings_function = HuggingFaceEmbeddings(model_name = "sentence-transformers/multi-qa-mpnet-base-dot-v1")
-llm = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
-    callbacks=[QueueCallback(Q)],            
+llm_reformulation = get_llm(max_tokens = 512,temperature = 0.0,verbose = True,streaming = False)
+llm_streaming = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
+    callbacks=[StreamingGradioCallbackHandler(Q),StreamingStdOutCallbackHandler()],            
 )
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
 retriever = ClimateQARetriever(vectorstore=vectorstore,sources = ["IPCC"],k_summary = 3,k_total = 10)
-chain = load_climateqa_chain(retriever,llm)
+chain = load_climateqa_chain(retriever,llm_reformulation,llm_streaming)
 
 
 #---------------------------------------------------------------------------
 # ClimateQ&A Streaming
 # From https://github.com/gradio-app/gradio/issues/5345
+# And https://stackoverflow.com/questions/76057076/how-to-stream-agents-response-in-langchain
 #---------------------------------------------------------------------------
 
+from threading import Thread
 
-
-# Create a function that will return our generator
-def stream(chain, input_text) -> Generator:
-    with Q.mutex:
-        Q.queue.clear()
-    job_done = object()
-
-    # Create a function to call - this will run in a thread
-    def task():
-        answer = chain({"query":input_text,"audience":"expert climate scientist"})
-        Q.put(job_done)
-
-    # Create a thread and start the function
-    t = Thread(target=task)
-    t.start()
-
-    content = ""
-
-    # Get each new token from the queue and yield for our generator
-    while True:
-        try:
-            next_token = Q.get(True, timeout=1)
-            if next_token is job_done:
-                break
-            content += next_token
-            yield next_token, content
-        except Empty:
-            continue
-
-
-def stream_sentences(chain, input_text) -> Generator:
-    """wrapper to stream function"""
-    sentence = ""
-    for next_token, content in stream(chain, input_text):
-        sentence += next_token
-        if "\n\n" in next_token:
-            yield sentence
-            sentence = ""
-    if sentence:
-        yield sentence
-
-
-
+def threaded_chain(query,audience):
+    response = chain({"query":query,"audience":audience})
+    Q.put(response)
+    Q.put(job_done)
 
 def answer_user(message,history):
     return message, history + [[message, None]]
-
 
 def answer_bot(message,history,audience):
 
@@ -170,25 +158,39 @@ def answer_bot(message,history,audience):
     # for next_token, content in stream(message):
     #     yield(content)
 
-    output = chain({"query":message,"audience":audience_prompt})
-    question = output["question"]
-    sources = output["source_documents"]
+    thread = Thread(target=threaded_chain, kwargs={"query":message,"audience":audience_prompt})
+    thread.start()
 
-    if len(sources) > 0:
-        sources_text = []
-        for i, d in enumerate(sources, 1):
-            sources_text.append(make_html_source(d,i))
-        sources_text = "\n\n".join([f"Query used for retrieval:\n{question}"] + sources_text)
+    history[-1][1] = ""
+    while True:
+        next_item = Q.get(block=True) # Blocks until an input is available
 
-        history[-1][1] = output["answer"]
-        return "",history,sources_text
+        if next_item is job_done:
+            continue
 
-    else:
-        sources_text = "⚠️ No relevant passages found in the climate science reports (IPCC and IPBES)"
-        complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate issues).**"
-        history[-1][1] = complete_response
-        return "",history, sources_text
+        elif isinstance(next_item, dict):  # assuming LLMResult is a dictionary
+            response = next_item
+            if "source_documents" in response and len(response["source_documents"]) > 0:
+                sources_text = []
+                for i, d in enumerate(response["source_documents"], 1):
+                    sources_text.append(make_html_source(d, i))
+                sources_text = "\n\n".join([f"Query used for retrieval:\n{response['question']}"] + sources_text)
+                # history[-1][1] += next_item["answer"]
+                # history[-1][1] += "\n\n" + sources_text
+                yield "", history, sources_text
 
+            else:
+                sources_text = "⚠️ No relevant passages found in the scientific reports (IPCC and IPBES)"
+                complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
+                history[-1][1] += "\n\n" + complete_response
+                yield "", history, sources_text
+            break
+
+        elif isinstance(next_item, str):
+            history[-1][1] += next_item
+            yield "", history, ""
+
+    thread.join()
 
 #---------------------------------------------------------------------------
 # ClimateQ&A core functions
@@ -348,7 +350,19 @@ def log_on_azure(file, logs, share_client):
 # --------------------------------------------------------------------
 
 
+init_prompt = """
+Hello ! I am ClimateQ&A, a conversational assistant designed to help you understand climate change and biodiversity loss. I will answer your questions by **sifting through the IPCC and IPBES scientific reports**.
 
+💡 How to use
+- **Language**: You can ask me your questions in any language. 
+- **Audience**: You can specify your audience (children, general public, experts) to get a more adapted answer.
+- **Sources**: You can choose to search in the IPCC or IPBES reports, or both.
+
+📚 Limitations
+*Please note that the AI is not perfect and may sometimes give irrelevant answers. If you are not satisfied with the answer, please ask a more specific question or report your feedback to help us improve the system.*
+
+❓ What do you want to learn ?
+"""
 
 
 with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
@@ -363,7 +377,9 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
         with gr.Row(elem_id="chatbot-row"):
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = ("assets/logo4.png",None))
+                bot = gr.Chatbot(
+                    value=[[None,init_prompt]],
+                    show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = ("assets/logo4.png",None))
                 
                 with gr.Row(elem_id = "input-message"):
                     textbox=gr.Textbox(placeholder="Ask me anything here!",show_label=False,scale=7)
@@ -441,7 +457,6 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
             examples_hidden.change(answer_user, [examples_hidden, bot], [textbox, bot], queue=False).then(
                     answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
                 )
-        
             submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=False).then(
                     answer_bot, [textbox,bot,dropdown_audience], [textbox,bot,sources_textbox]
                 )
@@ -619,6 +634,8 @@ Or around 2 to 4 times more than a typical Google search.
 - ClimateQ&A on Hugging Face is finally working again with all the new features !
 - Switched all python code to langchain codebase for cleaner code, easier maintenance and future features
 - Updated GPT model to August version
+- Added streaming response to improve UX
+- Created a custom Retriever chain to avoid calling the LLM if there is no documents retrieved
 - Use of HuggingFace embed on https://climateqa.com to avoid demultiplying deployments
                     
 ##### v1.0.0 - *2023-05-11*
