@@ -93,8 +93,8 @@ def parse_output_llm_with_sources(output):
 
 
 
-Q = SimpleQueue()
 job_done = object() # signals the processing is done
+
 
 class StreamingGradioCallbackHandler(BaseCallbackHandler):
     def __init__(self, q: SimpleQueue):
@@ -129,10 +129,7 @@ class StreamingGradioCallbackHandler(BaseCallbackHandler):
 
 # Create embeddings function and LLM
 embeddings_function = HuggingFaceEmbeddings(model_name = "sentence-transformers/multi-qa-mpnet-base-dot-v1")
-llm_reformulation = get_llm(max_tokens = 512,temperature = 0.0,verbose = True,streaming = False)
-llm_streaming = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
-    callbacks=[StreamingGradioCallbackHandler(Q),StreamingStdOutCallbackHandler()],            
-)
+
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
@@ -146,11 +143,22 @@ vectorstore = get_pinecone_vectorstore(embeddings_function)
 from threading import Thread
 
 
-
 def answer_user(message,history):
     return message, history + [[message, None]]
 
 def answer_bot(message,history,audience,sources):
+
+
+    Q = SimpleQueue()
+
+    llm_reformulation = get_llm(max_tokens = 512,temperature = 0.0,verbose = True,streaming = False)
+    llm_streaming = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
+        callbacks=[StreamingGradioCallbackHandler(Q),StreamingStdOutCallbackHandler()],            
+    )
+
+    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,k_summary = 3,k_total = 10)
+    chain = load_climateqa_chain(retriever,llm_reformulation,llm_streaming)
+
 
     if len(sources) == 0:
         sources = ["IPCC"]
@@ -159,9 +167,6 @@ def answer_bot(message,history,audience,sources):
     #     complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
     #     history[-1][1] += "\n\n" + complete_response
     #     return "", history, ""
-
-    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,k_summary = 3,k_total = 10)
-    chain = load_climateqa_chain(retriever,llm_reformulation,llm_streaming)
 
     def threaded_chain(query,audience):
         response = chain({"query":query,"audience":audience})
@@ -416,8 +421,8 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                 # bot.like(vote,None,None)
                 
                 with gr.Row(elem_id = "input-message"):
-                    textbox=gr.Textbox(placeholder="Ask me anything here!",show_label=False,scale=7)
-                    submit_button = gr.Button(">",scale = 1,elem_id = "submit-button")
+                    textbox=gr.Textbox(placeholder="Ask me anything here!",show_label=False,scale=1,lines = 1,interactive = True)
+                    # submit_button = gr.Button(">",scale = 1,elem_id = "submit-button")
 
 
             with gr.Column(scale=1, variant="panel",elem_id = "right-panel"):
@@ -489,16 +494,15 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 
 
             # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
-
-            textbox.submit(answer_user, [textbox, bot], [textbox, bot], queue=False).then(
+            textbox.submit(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
                     answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
                 )
-            examples_hidden.change(answer_user, [examples_hidden, bot], [textbox, bot], queue=False).then(
+            examples_hidden.change(answer_user, [examples_hidden, bot], [textbox, bot], queue=True).then(
                     answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
                 )
-            submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=False).then(
-                    answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
-                )
+            # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
+            #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
+            #     )
 
 
 
@@ -684,6 +688,6 @@ Or around 2 to 4 times more than a typical Google search.
 """
     )
 
-    demo.queue(concurrency_count=16)
+    demo.queue(concurrency_count=1)
 
 demo.launch()
