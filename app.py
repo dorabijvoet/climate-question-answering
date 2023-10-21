@@ -441,8 +441,8 @@ def log_on_azure(file, logs, share_client):
     file_client.upload_file(str(logs))
 
 
-def disable_component():
-    return gr.update(interactive = False)
+# def disable_component():
+#     return gr.update(interactive = False)
 
 
 
@@ -572,7 +572,6 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
             # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
             (textbox
                 .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                .then(disable_component, [examples_questions], [examples_questions],queue = False)
                 .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
                 .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
                 .success(lambda x : textbox,[textbox],[textbox])
@@ -580,7 +579,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 
             (examples_hidden
                 .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                .then(disable_component, [examples_questions], [examples_questions],queue = False)
+                # .then(disable_component, [examples_questions], [examples_questions],queue = False)
                 .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
                 .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
                 .success(lambda x : textbox,[textbox],[textbox])
