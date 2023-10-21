@@ -146,6 +146,8 @@ from threading import Thread
 import json
 
 def answer_user(query,query_example,history):
+    if len(query) <= 2:
+        raise Exception("Please ask a longer question")
     return query, history + [[query, ". . ."]]
 
 def answer_user_example(query,query_example,history):
@@ -474,6 +476,10 @@ def vote(data: gr.LikeData):
         print(data)
 
 
+def change_tab():
+    return gr.Tabs.update(selected=1)
+
+
 with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     # user_id_state = gr.State([user_id])
 
@@ -497,96 +503,100 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 
             with gr.Column(scale=1, variant="panel",elem_id = "right-panel"):
 
-                with gr.Tab("📝 Examples",elem_id = "tab-examples"):
-                                    
-                    examples_hidden = gr.Textbox(elem_id="hidden-message")
 
-                    examples_questions = gr.Examples(
-                        [
-                            "Is climate change caused by humans?",
-                            "What evidence do we have of climate change?",
-                            "What are the impacts of climate change?",
-                            "Can climate change be reversed?",
-                            "What is the difference between climate change and global warming?",
-                            "What can individuals do to address climate change?",
-                            "What are the main causes of climate change?",
-                            "What is the Paris Agreement and why is it important?",
-                            "Which industries have the highest GHG emissions?",
-                            "Is climate change a hoax created by the government or environmental organizations?",
-                            "What is the relationship between climate change and biodiversity loss?",
-                            "What is the link between gender equality and climate change?",
-                            "Is the impact of climate change really as severe as it is claimed to be?",
-                            "What is the impact of rising sea levels?",
-                            "What are the different greenhouse gases (GHG)?",
-                            "What is the warming power of methane?",
-                            "What is the jet stream?",
-                            "What is the breakdown of carbon sinks?",
-                            "How do the GHGs work ? Why does temperature increase ?",
-                            "What is the impact of global warming on ocean currents?",
-                            "How much warming is possible in 2050?",
-                            "What is the impact of climate change in Africa?",
-                            "Will climate change accelerate diseases and epidemics like COVID?",
-                            "What are the economic impacts of climate change?",
-                            "How much is the cost of inaction ?",
-                            "What is the relationship between climate change and poverty?",
-                            "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
-                            "Is economic growth possible? What do you think about degrowth?",
-                            "Will technology save us?",
-                            "Is climate change a natural phenomenon ?",
-                            "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
-                            "Is the scientific consensus on climate change really as strong as it is claimed to be?",
-                        ],
-                        [examples_hidden],
-                        examples_per_page=10,
-                        # cache_examples=True,
-                    )
+                with gr.Tabs() as tabs:
+                    with gr.TabItem("📝 Examples",elem_id = "tab-examples",id = 0):
+                                        
+                        examples_hidden = gr.Textbox(elem_id="hidden-message")
 
-                with gr.Tab("📚 Citations",elem_id = "tab-citations"):
-                    sources_textbox = gr.HTML(show_label=False, elem_id="sources-textbox")
-                    docs_textbox = gr.State("")
+                        examples_questions = gr.Examples(
+                            [
+                                "Is climate change caused by humans?",
+                                "What evidence do we have of climate change?",
+                                "What are the impacts of climate change?",
+                                "Can climate change be reversed?",
+                                "What is the difference between climate change and global warming?",
+                                "What can individuals do to address climate change?",
+                                "What are the main causes of climate change?",
+                                "What is the Paris Agreement and why is it important?",
+                                "Which industries have the highest GHG emissions?",
+                                "Is climate change a hoax created by the government or environmental organizations?",
+                                "What is the relationship between climate change and biodiversity loss?",
+                                "What is the link between gender equality and climate change?",
+                                "Is the impact of climate change really as severe as it is claimed to be?",
+                                "What is the impact of rising sea levels?",
+                                "What are the different greenhouse gases (GHG)?",
+                                "What is the warming power of methane?",
+                                "What is the jet stream?",
+                                "What is the breakdown of carbon sinks?",
+                                "How do the GHGs work ? Why does temperature increase ?",
+                                "What is the impact of global warming on ocean currents?",
+                                "How much warming is possible in 2050?",
+                                "What is the impact of climate change in Africa?",
+                                "Will climate change accelerate diseases and epidemics like COVID?",
+                                "What are the economic impacts of climate change?",
+                                "How much is the cost of inaction ?",
+                                "What is the relationship between climate change and poverty?",
+                                "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
+                                "Is economic growth possible? What do you think about degrowth?",
+                                "Will technology save us?",
+                                "Is climate change a natural phenomenon ?",
+                                "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
+                                "Is the scientific consensus on climate change really as strong as it is claimed to be?",
+                            ],
+                            [examples_hidden],
+                            examples_per_page=10,
+                            run_on_click=False,
+                            # cache_examples=True,
+                        )
 
-                with gr.Tab("⚙️ Configuration",elem_id = "tab-config"):
+                    with gr.Tab("📚 Citations",elem_id = "tab-citations",id = 1):
+                        sources_textbox = gr.HTML(show_label=False, elem_id="sources-textbox")
+                        docs_textbox = gr.State("")
 
-                    gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
+                    with gr.Tab("⚙️ Configuration",elem_id = "tab-config",id = 2):
 
-
-                    dropdown_sources = gr.CheckboxGroup(
-                        ["IPCC", "IPBES"],
-                        label="Select reports",
-                        value=["IPCC"],
-                        interactive=True,
-                    )
-
-                    dropdown_audience = gr.Dropdown(
-                        ["Children","General public","Experts"],
-                        label="Select audience",
-                        value="Experts",
-                        interactive=True,
-                    )
-
-                    output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
-                    output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
+                        gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
 
 
+                        dropdown_sources = gr.CheckboxGroup(
+                            ["IPCC", "IPBES"],
+                            label="Select reports",
+                            value=["IPCC"],
+                            interactive=True,
+                        )
 
-            # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
-            (textbox
-                .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-                .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
-                .success(lambda x : textbox,[textbox],[textbox])
-            )
+                        dropdown_audience = gr.Dropdown(
+                            ["Children","General public","Experts"],
+                            label="Select audience",
+                            value="Experts",
+                            interactive=True,
+                        )
 
-            (examples_hidden
-                .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                # .then(disable_component, [examples_questions], [examples_questions],queue = False)
-                .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-                .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
-                .success(lambda x : textbox,[textbox],[textbox])
-            )
-            # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
-            #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
-            #     )
+                        output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
+                        output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
+
+
+
+                # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
+                (textbox
+                    .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+                    .success(change_tab,None,tabs)
+                    .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+                    .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
+                    .success(lambda x : textbox,[textbox],[textbox])
+                )
+
+                (examples_hidden
+                    .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+                    .success(change_tab,None,tabs)
+                    .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+                    .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
+                    .success(lambda x : textbox,[textbox],[textbox])
+                )
+                # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
+                #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
+                #     )
 
 
 
