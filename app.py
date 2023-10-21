@@ -20,7 +20,8 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 # ClimateQ&A imports
 from climateqa.llm import get_llm
-from climateqa.chains import load_climateqa_chain
+from climateqa.chains import load_qa_chain_with_docs,load_qa_chain_with_text
+from climateqa.chains import load_reformulation_chain
 from climateqa.vectorstore import get_pinecone_vectorstore
 from climateqa.retriever import ClimateQARetriever
 from climateqa.prompts import audience_prompts
@@ -142,36 +143,49 @@ vectorstore = get_pinecone_vectorstore(embeddings_function)
 
 from threading import Thread
 
+import json
 
-def answer_user(message,history):
-    return message, history + [[message, None]]
+def answer_user(query,query_example,history):
+    return query, history + [[query, ". . ."]]
 
-def answer_bot(message,history,audience,sources):
+def answer_user_example(query,query_example,history):
+    return query_example, history + [[query_example, ". . ."]]
 
+def fetch_sources(query,sources):
 
-    Q = SimpleQueue()
-
-    llm_reformulation = get_llm(max_tokens = 512,temperature = 0.0,verbose = True,streaming = False)
-    llm_streaming = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
-        callbacks=[StreamingGradioCallbackHandler(Q),StreamingStdOutCallbackHandler()],            
-    )
-
-    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,k_summary = 3,k_total = 10)
-    chain = load_climateqa_chain(retriever,llm_reformulation,llm_streaming)
-
-
+    # Prepare default values
     if len(sources) == 0:
         sources = ["IPCC"]
 
-    # if len(message) <= 2:
-    #     complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
-    #     history[-1][1] += "\n\n" + complete_response
-    #     return "", history, ""
+    llm_reformulation = get_llm(max_tokens = 512,temperature = 0.0,verbose = True,streaming = False)
+    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,k_summary = 3,k_total = 10)
+    reformulation_chain = load_reformulation_chain(llm_reformulation)
 
-    def threaded_chain(query,audience):
-        response = chain({"query":query,"audience":audience})
-        Q.put(response)
-        Q.put(job_done)
+    # Calculate language
+    output_reformulation = reformulation_chain({"query":query})
+    question = output_reformulation["question"]
+    language = output_reformulation["language"]
+
+    # Retrieve docs
+    docs = retriever.get_relevant_documents(question)
+
+    if len(docs) > 0:
+
+        # Already display the sources
+        sources_text = []
+        for i, d in enumerate(docs, 1):
+            sources_text.append(make_html_source(d, i))
+        citations_text = "".join(sources_text)
+        docs_text = "\n\n".join([d.page_content for d in docs])
+        return "",citations_text,docs_text,question,language
+    else:
+        sources_text = "⚠️ No relevant passages found in the scientific reports (IPCC and IPBES)"
+        citations_text = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
+        docs_text = ""
+        return "",citations_text,docs_text,question,language
+
+
+def answer_bot(query,history,docs,question,language,audience):
 
     if audience == "Children":
         audience_prompt = audience_prompts["children"]
@@ -182,6 +196,57 @@ def answer_bot(message,history,audience,sources):
     else:
         audience_prompt = audience_prompts["experts"]
 
+    # Prepare Queue for streaming LLMs
+    Q = SimpleQueue()
+
+    llm_streaming = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
+        callbacks=[StreamingGradioCallbackHandler(Q),StreamingStdOutCallbackHandler()],            
+    )
+
+    qa_chain = load_qa_chain_with_text(llm_streaming)
+
+    def threaded_chain(question,audience,language,docs):
+        try:
+            response = qa_chain({"question":question,"audience":audience,"language":language,"summaries":docs})
+            Q.put(response)
+            Q.put(job_done)
+        except Exception as e:
+            print(e)
+    
+    history[-1][1] = ""
+    
+    textbox=gr.Textbox(placeholder=". . .",show_label=False,scale=1,lines = 1,interactive = False)
+
+
+    if len(docs) > 0:
+
+        # Start thread for streaming
+        thread = Thread(
+            target=threaded_chain, 
+            kwargs={"question":question,"audience":audience_prompt,"language":language,"docs":docs}
+        )
+        thread.start()
+
+        while True:
+            next_item = Q.get(block=True) # Blocks until an input is available
+
+            if next_item is job_done:
+                break
+            elif isinstance(next_item, str):
+                new_paragraph = history[-1][1] + next_item
+                new_paragraph = parse_output_llm_with_sources(new_paragraph)
+                history[-1][1] = new_paragraph
+                yield textbox,history
+            else:
+                pass
+        thread.join()
+    else:
+        complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
+        history[-1][1] += complete_response
+        yield "",history
+
+
+
     # history_langchain_format = []
     # for human, ai in history:
     #     history_langchain_format.append(HumanMessage(content=human))
@@ -190,41 +255,42 @@ def answer_bot(message,history,audience,sources):
     # for next_token, content in stream(message):
     #     yield(content)
 
-    thread = Thread(target=threaded_chain, kwargs={"query":message,"audience":audience_prompt})
-    thread.start()
+    # thread = Thread(target=threaded_chain, kwargs={"query":message,"audience":audience_prompt})
+    # thread.start()
 
-    history[-1][1] = ""
-    while True:
-        next_item = Q.get(block=True) # Blocks until an input is available
+    # history[-1][1] = ""
+    # while True:
+    #     next_item = Q.get(block=True) # Blocks until an input is available
 
-        if next_item is job_done:
-            continue
+    #     print(type(next_item))
+    #     if next_item is job_done:
+    #         continue
 
-        elif isinstance(next_item, dict):  # assuming LLMResult is a dictionary
-            response = next_item
-            if "source_documents" in response and len(response["source_documents"]) > 0:
-                sources_text = []
-                for i, d in enumerate(response["source_documents"], 1):
-                    sources_text.append(make_html_source(d, i))
-                sources_text = "\n\n".join([f"Query used for retrieval:\n{response['question']}"] + sources_text)
-                # history[-1][1] += next_item["answer"]
-                # history[-1][1] += "\n\n" + sources_text
-                yield "", history, sources_text
+    #     elif isinstance(next_item, dict):  # assuming LLMResult is a dictionary
+    #         response = next_item
+    #         if "source_documents" in response and len(response["source_documents"]) > 0:
+    #             sources_text = []
+    #             for i, d in enumerate(response["source_documents"], 1):
+    #                 sources_text.append(make_html_source(d, i))
+    #             sources_text = "\n\n".join([f"Query used for retrieval:\n{response['question']}"] + sources_text)
+    #             # history[-1][1] += next_item["answer"]
+    #             # history[-1][1] += "\n\n" + sources_text
+    #             yield "", history, sources_text
 
-            else:
-                sources_text = "⚠️ No relevant passages found in the scientific reports (IPCC and IPBES)"
-                complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
-                history[-1][1] += "\n\n" + complete_response
-                yield "", history, sources_text
-            break
+    #         else:
+    #             sources_text = "⚠️ No relevant passages found in the scientific reports (IPCC and IPBES)"
+    #             complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
+    #             history[-1][1] += "\n\n" + complete_response
+    #             yield "", history, sources_text
+    #         break
 
-        elif isinstance(next_item, str):
-            new_paragraph = history[-1][1] + next_item
-            new_paragraph = parse_output_llm_with_sources(new_paragraph)
-            history[-1][1] = new_paragraph
-            yield "", history, ""
+    #     elif isinstance(next_item, str):
+    #         new_paragraph = history[-1][1] + next_item
+    #         new_paragraph = parse_output_llm_with_sources(new_paragraph)
+    #         history[-1][1] = new_paragraph
+    #         yield "", history, ""
 
-    thread.join()
+    # thread.join()
 
 #---------------------------------------------------------------------------
 # ClimateQ&A core functions
@@ -375,6 +441,8 @@ def log_on_azure(file, logs, share_client):
     file_client.upload_file(str(logs))
 
 
+def disable_component():
+    return gr.update(interactive = False)
 
 
 
@@ -419,7 +487,9 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                     show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = ("assets/logo4.png",None))
                 
                 # bot.like(vote,None,None)
-                
+
+
+
                 with gr.Row(elem_id = "input-message"):
                     textbox=gr.Textbox(placeholder="Ask me anything here!",show_label=False,scale=1,lines = 1,interactive = True)
                     # submit_button = gr.Button(">",scale = 1,elem_id = "submit-button")
@@ -472,11 +542,13 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                     )
 
                 with gr.Tab("📚 Citations",elem_id = "tab-citations"):
-                    sources_textbox = gr.Markdown(show_label=False, elem_id="sources-textbox")
+                    sources_textbox = gr.HTML(show_label=False, elem_id="sources-textbox")
+                    docs_textbox = gr.State("")
 
                 with gr.Tab("⚙️ Configuration",elem_id = "tab-config"):
 
                     gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
+
 
                     dropdown_sources = gr.CheckboxGroup(
                         ["IPCC", "IPBES"],
@@ -492,14 +564,27 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                         interactive=True,
                     )
 
+                    output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
+                    output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
+
+
 
             # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
-            textbox.submit(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
-                    answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
-                )
-            examples_hidden.change(answer_user, [examples_hidden, bot], [textbox, bot], queue=True).then(
-                    answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
-                )
+            (textbox
+                .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+                .then(disable_component, [examples_questions], [examples_questions],queue = False)
+                .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+                .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
+                .success(lambda x : textbox,[textbox],[textbox])
+            )
+
+            (examples_hidden
+                .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+                .then(disable_component, [examples_questions], [examples_questions],queue = False)
+                .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+                .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
+                .success(lambda x : textbox,[textbox],[textbox])
+            )
             # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
             #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
             #     )
@@ -688,6 +773,6 @@ Or around 2 to 4 times more than a typical Google search.
 """
     )
 
-    demo.queue(concurrency_count=1)
+    demo.queue(concurrency_count=16)
 
 demo.launch()
