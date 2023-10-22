@@ -4,12 +4,7 @@ import numpy as np
 import os
 from datetime import datetime
 
-from utils import (
-    make_pairs,
-    set_openai_api_key,
-    create_user_id,
-    to_completion,
-)
+from utils import create_user_id
 
 from azure.storage.fileshare import ShareServiceClient
 
@@ -30,7 +25,7 @@ from climateqa.prompts import audience_prompts
 try:
     from dotenv import load_dotenv
     load_dotenv()
-except:
+except Exception as e:
     pass
 
 # Set up Gradio Theme
@@ -40,6 +35,8 @@ theme = gr.themes.Base(
     font=[gr.themes.GoogleFont("Poppins"), "ui-sans-serif", "system-ui", "sans-serif"],
 )
 
+
+
 init_prompt = ""
 
 system_template = {
@@ -47,19 +44,21 @@ system_template = {
     "content": init_prompt,
 }
 
+account_key = os.environ["BLOB_ACCOUNT_KEY"]
+if len(account_key) == 86:
+    account_key += "=="
 
-# credential = {
-#     "account_key": os.environ["account_key"],
-#     "account_name": os.environ["account_name"],
-# }
+credential = {
+    "account_key": account_key,
+    "account_name": os.environ["BLOB_ACCOUNT_NAME"],
+}
 
-# account_url = os.environ["account_url"]
-# file_share_name = "climategpt"
-# service = ShareServiceClient(account_url=account_url, credential=credential)
-# share_client = service.get_share_client(file_share_name)
+account_url = os.environ["BLOB_ACCOUNT_URL"]
+file_share_name = "climategpt"
+service = ShareServiceClient(account_url=account_url, credential=credential)
+share_client = service.get_share_client(file_share_name)
 
-user_id = create_user_id(10)
-
+user_id = create_user_id()
 
 #---------------------------------------------------------------------------
 # ClimateQ&A core functions
@@ -242,6 +241,24 @@ def answer_bot(query,history,docs,question,language,audience):
             else:
                 pass
         thread.join()
+
+        # Log answer on Azure Blob Storage
+        timestamp = str(datetime.now().timestamp())
+        file = timestamp + ".json"
+        prompt = history[-1][0]
+        logs = {
+            "user_id": str(user_id),
+            "prompt": prompt,
+            "query": prompt,
+            "question":question,
+            "docs":docs,
+            "answer": history[-1][1],
+            "time": timestamp,
+        }
+        log_on_azure(file, logs, share_client)
+
+
+
     else:
         complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
         history[-1][1] += complete_response
@@ -394,9 +411,9 @@ def make_html_source(source,i):
 
 #         messages.append({"role": "assistant", "content": complete_response})
 #         timestamp = str(datetime.now().timestamp())
-#         file = user_id[0] + timestamp + ".json"
+#         file = user_id + timestamp + ".json"
 #         logs = {
-#             "user_id": user_id[0],
+#             "user_id": user_id,
 #             "prompt": query,
 #             "retrived": sources,
 #             "report_type": report_type,
@@ -424,9 +441,9 @@ def make_html_source(source,i):
 def save_feedback(feed: str, user_id):
     if len(feed) > 1:
         timestamp = str(datetime.now().timestamp())
-        file = user_id[0] + timestamp + ".json"
+        file = user_id + timestamp + ".json"
         logs = {
-            "user_id": user_id[0],
+            "user_id": user_id,
             "feedback": feed,
             "time": timestamp,
         }
@@ -437,10 +454,18 @@ def save_feedback(feed: str, user_id):
 def reset_textbox():
     return gr.update(value="")
 
+import json
 
 def log_on_azure(file, logs, share_client):
+    logs = json.dumps(logs)
+    print(type(logs))
     file_client = share_client.get_file_client(file)
-    file_client.upload_file(str(logs))
+    print("Uploading logs to Azure Blob Storage")
+    print("----------------------------------")
+    print("")
+    print(logs)
+    file_client.upload_file(logs)
+    print("Logs uploaded to Azure Blob Storage")
 
 
 # def disable_component():
