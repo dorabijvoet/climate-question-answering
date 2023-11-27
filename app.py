@@ -1,3 +1,7 @@
+from climateqa.engine.embeddings import get_embeddings_function
+embeddings_function = get_embeddings_function()
+
+
 import gradio as gr
 import pandas as pd
 import numpy as np
