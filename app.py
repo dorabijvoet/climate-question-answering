@@ -653,6 +653,6 @@ Or around 2 to 4 times more than a typical Google search.
 """
     )
 
-    demo.queue(concurrency_count=16)
+    demo.queue()
 
 demo.launch()
