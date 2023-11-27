@@ -11,7 +11,7 @@ def get_embeddings_function(version = "v1.2"):
     
         model_name = "BAAI/bge-base-en-v1.5"
         encode_kwargs = {'normalize_embeddings': True} # set True to compute cosine similarity
-        embeddings_function = HuggingFaceEmbeddings(
+        embeddings_function = HuggingFaceBgeEmbeddings(
             model_name=model_name,
             encode_kwargs=encode_kwargs,
             query_instruction="Represent this sentence for searching relevant passages: "
