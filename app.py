@@ -383,7 +383,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
-                    with gr.Tab("Images",elem_id = "tab-images",id = 3):
+                    with gr.Tab("Figures",elem_id = "tab-images",id = 3):
                         gallery = gr.Gallery()
 
 
@@ -583,7 +583,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     IPBES | Full Report. Regional Assessment Report on Biodiversity and Ecosystem Services for Europe and Central Asia. | https://zenodo.org/record/3237429/files/ipbes_assessment_report_eca_EN.pdf | 894 | 2018
     IPBES | Summary for Policymakers. Regional Assessment Report on Biodiversity and Ecosystem Services for Europe and Central Asia. | https://zenodo.org/record/3237468/files/ipbes_assessment_spm_eca_EN.pdf | 52 | 2018
     IPBES | Full Report. Assessment Report on Land Degradation and Restoration. | https://zenodo.org/record/3237393/files/ipbes_assessment_report_ldra_EN.pdf | 748 | 2018
-    IPBES | Summary for Policymakers. Assessment Report on Land Degradation and Restoration. | https://zenodo.org/record/3237393/files/ipbes_assessment_report_ldra_EN.pdf | 48 | 2018
+    IPBES | IPBES Invasive Alien Species Assessment: Summary for Policymakers & 6 chapters | https://zenodo.org/records/10127924/files/Summary%20for%20policymakers_IPBES%20IAS%20Assessment.pdf | 56 + 1198 | 2023
 """)
 
     with gr.Tab("Carbon Footprint",elem_classes = "max-height other-tabs"):
@@ -607,16 +607,17 @@ Or around 2 to 4 times more than a typical Google search.
         gr.Markdown("""
                     
 ##### Upcoming features
-- Figures retrieval
+- Figures retrieval and multimodal system
 - Conversational chat
 - Intent routing
-- Report filtering
                     
 ##### v1.2.0 - *2023-11-27
 - Added new IPBES assessment on Invasive Species (SPM and chapters)
 - Switched all the codebase to LCEL (Langchain Expression Language)
 - Added sample questions by category
 - Switched embeddings from old ``sentence-transformers/multi-qa-mpnet-base-dot-v1`` to ``BAAI/bge-base-en-v1.5``
+- Report filtering to select directly the report you want to source your answers from
+- First naive version of a figures retrieval system by looking up the figures in the retrieved pages
 
 ##### v1.1.0 - *2023-10-16*
 - ClimateQ&A on Hugging Face is finally working again with all the new features !
