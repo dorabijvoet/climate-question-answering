@@ -39,7 +39,7 @@ class ClimateQARetriever(BaseRetriever):
         # Search for k_summary documents in the summaries dataset
         filters_summaries = {
             **filters,
-            "report_type": { "$in":["SPM","TS"]},
+            "report_type": { "$in":["SPM"]},
         }
 
         docs_summaries = self.vectorstore.similarity_search_with_score(query=query,filter = filters_summaries,k = self.k_summary)
@@ -48,7 +48,7 @@ class ClimateQARetriever(BaseRetriever):
         # Search for k_total - k_summary documents in the full reports dataset
         filters_full = {
             **filters,
-            "report_type": { "$nin":["SPM","TS"]},
+            "report_type": { "$nin":["SPM"]},
         }
         k_full = self.k_total - len(docs_summaries)
         docs_full = self.vectorstore.similarity_search_with_score(query=query,filter = filters_full,k = k_full)
