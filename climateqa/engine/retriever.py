@@ -13,7 +13,7 @@ class ClimateQARetriever(BaseRetriever):
     vectorstore:VectorStore
     sources:list = ["IPCC","IPBES"]
     reports:list = []
-    threshold:float = 0.4
+    threshold:float = 0.6
     k_summary:int = 3
     k_total:int = 10
     namespace:str = "vectors"

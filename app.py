@@ -144,7 +144,7 @@ async def chat(query,history,audience,sources,reports):
         reports = []
 
     llm = get_llm(max_tokens = 1024,temperature = 0.0)
-    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,reports = reports,k_summary = 3,k_total = 10,threshold=0.4)
+    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,reports = reports,k_summary = 3,k_total = 10,threshold=0.7)
     rag_chain = make_rag_chain(retriever,llm)
 
     source_string = ""

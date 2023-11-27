@@ -5,4 +5,5 @@ azure-storage-blob
 python-dotenv==1.0.0
 langchain==0.0.333
 pinecone-client==2.2.4
-sentence-transformers==2.2.2
+sentence-transformers
+huggingface-hub
