@@ -12,18 +12,26 @@ from azure.storage.fileshare import ShareServiceClient
 
 import re
 import json
-
+print("1")
 # ClimateQ&A imports
 from climateqa.engine.llm import get_llm
+print("2")
 # from climateqa.chains import load_qa_chain_with_docs,load_qa_chain_with_text
 # from climateqa.chains import load_reformulation_chain
 from climateqa.engine.rag import make_rag_chain
+print("3")
 from climateqa.engine.vectorstore import get_pinecone_vectorstore
+print("4")
 from climateqa.engine.retriever import ClimateQARetriever
+print("5")
 from climateqa.engine.embeddings import get_embeddings_function
+print("6")
 from climateqa.engine.prompts import audience_prompts
+print("7")
 from climateqa.sample_questions import QUESTIONS
+print("8")
 from climateqa.constants import POSSIBLE_REPORTS
+print("9")
 from climateqa.utils import get_image_from_azure_blob_storage
 
 # Load environment variables in local mode
