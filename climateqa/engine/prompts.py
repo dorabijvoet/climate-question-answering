@@ -1,33 +1,42 @@
 
 # If the message is not relevant to climate change (like "How are you", "I am 18 years old" or "When was built the eiffel tower"), return N/A
 
-reformulation_prompt = """
+reformulation_prompt_template = """
 Reformulate the following user message to be a short standalone question in English, in the context of an educational discussion about climate change.
 ---
 query: La technologie nous sauvera-t-elle ?
-question: Can technology help humanity mitigate the effects of climate change?
-language: French
+-> 
+'question': 'Can technology help humanity mitigate the effects of climate change?',
+'language': 'French',
 ---
 query: what are our reserves in fossil fuel?
-question: What are the current reserves of fossil fuels and how long will they last?
-language: English
+-> 
+'question': 'What are the current reserves of fossil fuels and how long will they last?',
+'language': 'English',
 ---
 query: what are the main causes of climate change?
-question: What are the main causes of climate change in the last century?
-language: English
+->
+'question': 'What are the main causes of climate change in the last century?',
+'language': 'English'
 ---
 
+{format_instructions}
+
+Reformulate the question in English and detect the language of the original message
 Output the result as json with two keys "question" and "language"
 query: {query}
-answer:"""
+->
+```json
+"""
 
-system_prompt = """
+
+system_prompt_template = """
 You are ClimateQ&A, an AI Assistant created by Ekimetrics, you will act as a climate scientist and answer questions about climate change and biodiversity. 
 You are given a question and extracted passages of the IPCC and/or IPBES reports. Provide a clear and structured answer based on the passages provided, the context and the guidelines.
 """
 
 
-answer_prompt = """
+answer_prompt_template = """
 You are ClimateQ&A, an AI Assistant created by Ekimetrics. You are given a question and extracted passages of the IPCC and/or IPBES reports. Provide a clear and structured answer based on the passages provided, the context and the guidelines.
 
 Guidelines:
@@ -42,7 +51,7 @@ Guidelines:
 
 -----------------------
 Passages:
-{summaries}
+{context}
 
 -----------------------
 Question: {question} - Explained to {audience}

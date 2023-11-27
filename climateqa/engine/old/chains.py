@@ -10,32 +10,6 @@ from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from climateqa.prompts import answer_prompt, reformulation_prompt,audience_prompts
 from climateqa.custom_retrieval_chain import CustomRetrievalQAWithSourcesChain
 
-def load_reformulation_chain(llm):
-
-    prompt = PromptTemplate(
-        template = reformulation_prompt,
-        input_variables=["query"],
-    )
-    reformulation_chain = LLMChain(llm = llm,prompt = prompt,output_key="json")
-
-    # Parse the output
-    def parse_output(output):
-        query = output["query"]
-        json_output = json.loads(output["json"])
-        question = json_output.get("question", query)
-        language = json_output.get("language", "English")
-        return {
-            "question": question,
-            "language": language,
-        }
-    
-    transform_chain = TransformChain(
-        input_variables=["json"], output_variables=["question","language"], transform=parse_output
-    )
-
-    reformulation_chain = SequentialChain(chains = [reformulation_chain,transform_chain],input_variables=["query"],output_variables=["question","language"])
-    return reformulation_chain
-
 
 def load_combine_documents_chain(llm):
     prompt = PromptTemplate(template=answer_prompt, input_variables=["summaries", "question","audience","language"])
