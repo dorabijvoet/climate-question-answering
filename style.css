@@ -190,26 +190,37 @@ label.selected{
 
     div#sources-textbox{
         height:calc(100vh - 190px) !important;
-        overflow-y: auto;
+        overflow-y: auto !important;
+    }
+
+    div#tab-config{
+        height:calc(100vh - 190px) !important;
+        overflow-y: auto !important;
     }
 
     div#chatbot-row{
-        height:calc(100vh - 120px) !important;
+        height:calc(100vh - 90px) !important;
     }
 
     div#chatbot{
-        height:calc(100vh - 220px) !important;
+        height:calc(100vh - 170px) !important;
     }
 
     .max-height{
-        height:calc(100vh - 120px) !important;
+        height:calc(100vh - 90px) !important;
         overflow-y: auto;
     }
+
+    /* .tabitem:nth-child(n+3) {
+        padding-top:30px;
+        padding-left:40px;
+        padding-right:40px;
+    } */
 }
 
 footer {
     visibility: hidden;
-    display:none;
+    display:none !important;
 }
 
 
@@ -270,4 +281,18 @@ body.dark .card-footer span {
     margin-right:1px;
 }
 
-    
+.tabitem{
+    border:none !important;
+}    
+
+.other-tabs > div{
+    padding-left:40px;
+    padding-right:40px;
+    padding-top:10px;
+}
+
+.gallery-item > div{
+    white-space: normal !important; /* Allow the text to wrap */
+    word-break: break-word !important; /* Break words to prevent overflow */
+    overflow-wrap: break-word !important; /* Break long words if necessary */
+  }
