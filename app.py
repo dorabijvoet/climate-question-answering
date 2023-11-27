@@ -13,12 +13,6 @@ from azure.storage.fileshare import ShareServiceClient
 import re
 import json
 
-
-# Langchain
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.schema import AIMessage, HumanMessage
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-
 # ClimateQ&A imports
 from climateqa.engine.llm import get_llm
 # from climateqa.chains import load_qa_chain_with_docs,load_qa_chain_with_text
@@ -45,6 +39,8 @@ theme = gr.themes.Base(
     secondary_hue="red",
     font=[gr.themes.GoogleFont("Poppins"), "ui-sans-serif", "system-ui", "sans-serif"],
 )
+
+print("1")
 
 
 
@@ -91,7 +87,10 @@ def parse_output_llm_with_sources(output):
 
 
 # Create embeddings function and LLM
+print("1")
 embeddings_function = get_embeddings_function()
+print("1")
+
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
