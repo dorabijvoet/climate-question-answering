@@ -2,11 +2,17 @@ import gradio as gr
 import pandas as pd
 import numpy as np
 import os
+import time
 from datetime import datetime
 
 from utils import create_user_id
 
 from azure.storage.fileshare import ShareServiceClient
+
+
+import re
+import json
+
 
 # Langchain
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -14,12 +20,17 @@ from langchain.schema import AIMessage, HumanMessage
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 # ClimateQ&A imports
-from climateqa.llm import get_llm
-from climateqa.chains import load_qa_chain_with_docs,load_qa_chain_with_text
-from climateqa.chains import load_reformulation_chain
-from climateqa.vectorstore import get_pinecone_vectorstore
-from climateqa.retriever import ClimateQARetriever
-from climateqa.prompts import audience_prompts
+from climateqa.engine.llm import get_llm
+# from climateqa.chains import load_qa_chain_with_docs,load_qa_chain_with_text
+# from climateqa.chains import load_reformulation_chain
+from climateqa.engine.rag import make_rag_chain
+from climateqa.engine.vectorstore import get_pinecone_vectorstore
+from climateqa.engine.retriever import ClimateQARetriever
+from climateqa.engine.embeddings import get_embeddings_function
+from climateqa.engine.prompts import audience_prompts
+from climateqa.sample_questions import QUESTIONS
+from climateqa.constants import POSSIBLE_REPORTS
+from climateqa.utils import get_image_from_azure_blob_storage
 
 # Load environment variables in local mode
 try:
@@ -60,21 +71,7 @@ share_client = service.get_share_client(file_share_name)
 
 user_id = create_user_id()
 
-#---------------------------------------------------------------------------
-# ClimateQ&A core functions
-#---------------------------------------------------------------------------
 
-from langchain.callbacks.base import BaseCallbackHandler
-from queue import Queue, Empty
-from threading import Thread
-from collections.abc import Generator
-from langchain.schema import LLMResult
-from typing import Any, Union,Dict,List
-from queue import SimpleQueue
-# # Create a Queue
-# Q = Queue()
-
-import re
 
 def parse_output_llm_with_sources(output):
     # Split the content into a list of text and "[Doc X]" references
@@ -93,100 +90,31 @@ def parse_output_llm_with_sources(output):
 
 
 
-job_done = object() # signals the processing is done
-
-
-class StreamingGradioCallbackHandler(BaseCallbackHandler):
-    def __init__(self, q: SimpleQueue):
-        self.q = q
-
-    def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
-    ) -> None:
-        """Run when LLM starts running. Clean the queue."""
-        while not self.q.empty():
-            try:
-                self.q.get(block=False)
-            except Empty:
-                continue
-
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        """Run on new LLM token. Only available when streaming is enabled."""
-        self.q.put(token)
-
-    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        """Run when LLM ends running."""
-        self.q.put(job_done)
-
-    def on_llm_error(
-        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-    ) -> None:
-        """Run when LLM errors."""
-        self.q.put(job_done)
-
-
-
-
 # Create embeddings function and LLM
-embeddings_function = HuggingFaceEmbeddings(model_name = "sentence-transformers/multi-qa-mpnet-base-dot-v1")
-
+embeddings_function = get_embeddings_function()
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
 
-#---------------------------------------------------------------------------
-# ClimateQ&A Streaming
-# From https://github.com/gradio-app/gradio/issues/5345
-# And https://stackoverflow.com/questions/76057076/how-to-stream-agents-response-in-langchain
-#---------------------------------------------------------------------------
 
-from threading import Thread
-
-import json
-
-def answer_user(query,query_example,history):
-    if len(query) <= 2:
-        raise Exception("Please ask a longer question")
-    return query, history + [[query, ". . ."]]
-
-def answer_user_example(query,query_example,history):
-    return query_example, history + [[query_example, ". . ."]]
-
-def fetch_sources(query,sources):
-
-    # Prepare default values
-    if len(sources) == 0:
-        sources = ["IPCC"]
-
-    llm_reformulation = get_llm(max_tokens = 512,temperature = 0.0,verbose = True,streaming = False)
-    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,k_summary = 3,k_total = 10)
-    reformulation_chain = load_reformulation_chain(llm_reformulation)
-
-    # Calculate language
-    output_reformulation = reformulation_chain({"query":query})
-    question = output_reformulation["question"]
-    language = output_reformulation["language"]
-
-    # Retrieve docs
-    docs = retriever.get_relevant_documents(question)
-
-    if len(docs) > 0:
-
-        # Already display the sources
-        sources_text = []
-        for i, d in enumerate(docs, 1):
-            sources_text.append(make_html_source(d, i))
-        citations_text = "".join(sources_text)
-        docs_text = "\n\n".join([d.page_content for d in docs])
-        return "",citations_text,docs_text,question,language
-    else:
-        sources_text = "⚠️ No relevant passages found in the scientific reports (IPCC and IPBES)"
-        citations_text = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
-        docs_text = ""
-        return "",citations_text,docs_text,question,language
+def make_pairs(lst):
+    """from a list of even lenght, make tupple pairs"""
+    return [(lst[i], lst[i + 1]) for i in range(0, len(lst), 2)]
 
 
-def answer_bot(query,history,docs,question,language,audience):
+def serialize_docs(docs):
+    new_docs = []
+    for doc in docs:
+        new_doc = {}
+        new_doc["page_content"] = doc.page_content
+        new_doc["metadata"] = doc.metadata
+        new_docs.append(new_doc)
+    return new_docs
+
+
+async def chat(query,history,audience,sources,reports):
+    """taking a query and a message history, use a pipeline (reformulation, retriever, answering) to yield a tuple of:
+    (messages in gradio format, messages in langchain format, source documents)"""
 
     if audience == "Children":
         audience_prompt = audience_prompts["children"]
@@ -197,52 +125,75 @@ def answer_bot(query,history,docs,question,language,audience):
     else:
         audience_prompt = audience_prompts["experts"]
 
-    # Prepare Queue for streaming LLMs
-    Q = SimpleQueue()
+    # Prepare default values
+    if len(sources) == 0:
+        sources = ["IPCC"]
 
-    llm_streaming = get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = True,
-        callbacks=[StreamingGradioCallbackHandler(Q),StreamingStdOutCallbackHandler()],            
-    )
+    if len(reports) == 0:
+        reports = []
 
-    qa_chain = load_qa_chain_with_text(llm_streaming)
+    llm = get_llm(max_tokens = 1024,temperature = 0.0)
+    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,reports = reports,k_summary = 3,k_total = 10,threshold=0.4)
+    rag_chain = make_rag_chain(retriever,llm)
 
-    def threaded_chain(question,audience,language,docs):
-        try:
-            response = qa_chain({"question":question,"audience":audience,"language":language,"summaries":docs})
-            Q.put(response)
-            Q.put(job_done)
-        except Exception as e:
-            print(e)
+    source_string = ""
+
+
+    # gradio_format = make_pairs([a.content for a in history]) + [(query, "")]
+
+    # history = history + [(query,"")]
+
+    # print(history)
+
+    # print(gradio_format)
+
+    # # reset memory
+    # memory.clear()
+    # for message in history:
+    #     memory.chat_memory.add_message(message)
     
-    history[-1][1] = ""
+    inputs = {"query": query,"audience": audience_prompt}
+    result = rag_chain.astream_log(inputs)
+
+    reformulated_question_path_id = "/logs/flatten_dict/final_output"
+    retriever_path_id = "/logs/Retriever/final_output"
+    final_answer_path_id = "/logs/AzureChatOpenAI:2/streamed_output_str/-"
+
+    docs_html = ""
+    output_query = ""
+    output_language = ""
+    gallery = []
     
-    textbox=gr.Textbox(placeholder=". . .",show_label=False,scale=1,lines = 1,interactive = False)
+    async for op in result:
+
+        op = op.ops[0]
+
+        if op['path'] == reformulated_question_path_id: # reforulated question
+            output_language = op['value']["language"] # str
+            output_query = op["value"]["question"]
+        
+        elif op['path'] == retriever_path_id: # documents
+            docs = op['value']['documents'] # List[Document]
+            docs_html = []
+            for i, d in enumerate(docs, 1):
+                docs_html.append(make_html_source(d, i))
+            docs_html = "".join(docs_html)
 
 
-    if len(docs) > 0:
+        elif op['path'] == final_answer_path_id: # final answer
+            new_token = op['value'] # str
+            time.sleep(0.03)
+            answer_yet = history[-1][1] + new_token
+            answer_yet = parse_output_llm_with_sources(answer_yet)
+            history[-1] = (query,answer_yet)
 
-        # Start thread for streaming
-        thread = Thread(
-            target=threaded_chain, 
-            kwargs={"question":question,"audience":audience_prompt,"language":language,"docs":docs}
-        )
-        thread.start()
 
-        while True:
-            next_item = Q.get(block=True) # Blocks until an input is available
 
-            if next_item is job_done:
-                break
-            elif isinstance(next_item, str):
-                new_paragraph = history[-1][1] + next_item
-                new_paragraph = parse_output_llm_with_sources(new_paragraph)
-                history[-1][1] = new_paragraph
-                yield textbox,history
-            else:
-                pass
-        thread.join()
+        history = [tuple(x) for x in history]
+        yield history,docs_html,output_query,output_language,gallery
 
-        # Log answer on Azure Blob Storage
+    # Log answer on Azure Blob Storage
+    if os.getenv("GRADIO_ENV") != "local":
         timestamp = str(datetime.now().timestamp())
         file = timestamp + ".json"
         prompt = history[-1][0]
@@ -250,75 +201,31 @@ def answer_bot(query,history,docs,question,language,audience):
             "user_id": str(user_id),
             "prompt": prompt,
             "query": prompt,
-            "question":question,
-            "docs":docs,
+            "question":output_query,
+            "docs":serialize_docs(docs),
             "answer": history[-1][1],
             "time": timestamp,
         }
         log_on_azure(file, logs, share_client)
 
 
+    gallery = [x.metadata["image_path"] for x in docs if (len(x.metadata["image_path"]) > 0 and "IAS" in x.metadata["image_path"])]
+    if len(gallery) > 0:
+        gallery = list(set("|".join(gallery).split("|")))
+        gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
-    else:
-        complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
-        history[-1][1] += complete_response
-        yield "",history
+    yield history,docs_html,output_query,output_language,gallery
 
 
-
-    # history_langchain_format = []
-    # for human, ai in history:
-    #     history_langchain_format.append(HumanMessage(content=human))
-    #     history_langchain_format.append(AIMessage(content=ai))
-    # history_langchain_format.append(HumanMessage(content=message)
-    # for next_token, content in stream(message):
-    #     yield(content)
-
-    # thread = Thread(target=threaded_chain, kwargs={"query":message,"audience":audience_prompt})
-    # thread.start()
-
-    # history[-1][1] = ""
-    # while True:
-    #     next_item = Q.get(block=True) # Blocks until an input is available
-
-    #     print(type(next_item))
-    #     if next_item is job_done:
-    #         continue
-
-    #     elif isinstance(next_item, dict):  # assuming LLMResult is a dictionary
-    #         response = next_item
-    #         if "source_documents" in response and len(response["source_documents"]) > 0:
-    #             sources_text = []
-    #             for i, d in enumerate(response["source_documents"], 1):
-    #                 sources_text.append(make_html_source(d, i))
-    #             sources_text = "\n\n".join([f"Query used for retrieval:\n{response['question']}"] + sources_text)
-    #             # history[-1][1] += next_item["answer"]
-    #             # history[-1][1] += "\n\n" + sources_text
-    #             yield "", history, sources_text
-
-    #         else:
-    #             sources_text = "⚠️ No relevant passages found in the scientific reports (IPCC and IPBES)"
-    #             complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate and biodiversity issues).**"
-    #             history[-1][1] += "\n\n" + complete_response
-    #             yield "", history, sources_text
-    #         break
-
-    #     elif isinstance(next_item, str):
-    #         new_paragraph = history[-1][1] + next_item
-    #         new_paragraph = parse_output_llm_with_sources(new_paragraph)
-    #         history[-1][1] = new_paragraph
-    #         yield "", history, ""
-
-    # thread.join()
-
-#---------------------------------------------------------------------------
-# ClimateQ&A core functions
-#---------------------------------------------------------------------------
+    # memory.save_context(inputs, {"answer": gradio_format[-1][1]})
+    # yield gradio_format, memory.load_memory_variables({})["history"], source_string
+    
 
 
 def make_html_source(source,i):
     meta = source.metadata
-    content = source.page_content.split(":",1)[1].strip()
+    # content = source.page_content.split(":",1)[1].strip()
+    content = source.page_content.strip()
     return f"""
 <div class="card">
     <div class="card-content">
@@ -336,103 +243,10 @@ def make_html_source(source,i):
 
 
 
-# def chat(
-#     user_id: str,
-#     query: str,
-#     history: list = [system_template],
-#     report_type: str = "IPCC",
-#     threshold: float = 0.555,
-# ) -> tuple:
-#     """retrieve relevant documents in the document store then query gpt-turbo
-
-#     Args:
-#         query (str): user message.
-#         history (list, optional): history of the conversation. Defaults to [system_template].
-#         report_type (str, optional): should be "All available" or "IPCC only". Defaults to "All available".
-#         threshold (float, optional): similarity threshold, don't increase more than 0.568. Defaults to 0.56.
-
-#     Yields:
-#         tuple: chat gradio format, chat openai format, sources used.
-#     """
-
-#     if report_type not in ["IPCC","IPBES"]: report_type = "all"
-#     print("Searching in ",report_type," reports")
-#     # if report_type == "All available":
-#     #     retriever = retrieve_all
-#     # elif report_type == "IPCC only":
-#     #     retriever = retrieve_giec
-#     # else:
-#     #     raise Exception("report_type arg should be in (All available, IPCC only)")
-
-#     reformulated_query = openai.Completion.create(
-#         engine="EkiGPT",
-#         prompt=get_reformulation_prompt(query),
-#         temperature=0,
-#         max_tokens=128,
-#         stop=["\n---\n", "<|im_end|>"],
-#     )
-#     reformulated_query = reformulated_query["choices"][0]["text"]
-#     reformulated_query, language = reformulated_query.split("\n")
-#     language = language.split(":")[1].strip()
-
-
-#     sources = retrieve_with_summaries(reformulated_query,retriever,k_total = 10,k_summary = 3,as_dict = True,source = report_type.lower(),threshold = threshold)
-#     response_retriever = {
-#       "language":language,
-#       "reformulated_query":reformulated_query,
-#       "query":query,
-#       "sources":sources,
-#     }
-
-#     # docs = [d for d in retriever.retrieve(query=reformulated_query, top_k=10) if d.score > threshold]
-#     messages = history + [{"role": "user", "content": query}]
-
-#     if len(sources) > 0:
-#         docs_string = []
-#         docs_html = []
-#         for i, d in enumerate(sources, 1):
-#             docs_string.append(f"📃 Doc {i}: {d['meta']['short_name']} page {d['meta']['page_number']}\n{d['content']}")
-#             docs_html.append(make_html_source(d,i))
-#         docs_string = "\n\n".join([f"Query used for retrieval:\n{reformulated_query}"] + docs_string)
-#         docs_html = "\n\n".join([f"Query used for retrieval:\n{reformulated_query}"] + docs_html)
-#         messages.append({"role": "system", "content": f"{sources_prompt}\n\n{docs_string}\n\nAnswer in {language}:"})
-
-
-#         response = openai.Completion.create(
-#             engine="EkiGPT",
-#             prompt=to_completion(messages),
-#             temperature=0,  # deterministic
-#             stream=True,
-#             max_tokens=1024,
-#         )
-
-#         complete_response = ""
-#         messages.pop()
-
-#         messages.append({"role": "assistant", "content": complete_response})
-#         timestamp = str(datetime.now().timestamp())
-#         file = user_id + timestamp + ".json"
-#         logs = {
-#             "user_id": user_id,
-#             "prompt": query,
-#             "retrived": sources,
-#             "report_type": report_type,
-#             "prompt_eng": messages[0],
-#             "answer": messages[-1]["content"],
-#             "time": timestamp,
-#         }
-#         log_on_azure(file, logs, share_client)
-
-#         for chunk in response:
-#             if (chunk_message := chunk["choices"][0].get("text")) and chunk_message != "<|im_end|>":
-#                 complete_response += chunk_message
-#                 messages[-1]["content"] = complete_response
-#                 gradio_format = make_pairs([a["content"] for a in messages[1:]])
-#                 yield gradio_format, messages, docs_html
 
 #     else:
-#         docs_string = "⚠️ No relevant passages found in the climate science reports (IPCC and IPBES)"
-#         complete_response = "**⚠️ No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate issues).**"
+#         docs_string = "No relevant passages found in the climate science reports (IPCC and IPBES)"
+#         complete_response = "**No relevant passages found in the climate science reports (IPCC and IPBES), you may want to ask a more specific question (specifying your question on climate issues).**"
 #         messages.append({"role": "assistant", "content": complete_response})
 #         gradio_format = make_pairs([a["content"] for a in messages[1:]])
 #         yield gradio_format, messages, docs_string
@@ -451,14 +265,10 @@ def save_feedback(feed: str, user_id):
         return "Feedback submitted, thank you!"
 
 
-def reset_textbox():
-    return gr.update(value="")
 
-import json
 
 def log_on_azure(file, logs, share_client):
     logs = json.dumps(logs)
-    print(type(logs))
     file_client = share_client.get_file_client(file)
     print("Uploading logs to Azure Blob Storage")
     print("----------------------------------")
@@ -466,12 +276,6 @@ def log_on_azure(file, logs, share_client):
     print(logs)
     file_client.upload_file(logs)
     print("Logs uploaded to Azure Blob Storage")
-
-
-# def disable_component():
-#     return gr.update(interactive = False)
-
-
 
 
 # --------------------------------------------------------------------
@@ -482,15 +286,15 @@ def log_on_azure(file, logs, share_client):
 init_prompt = """
 Hello, I am ClimateQ&A, a conversational assistant designed to help you understand climate change and biodiversity loss. I will answer your questions by **sifting through the IPCC and IPBES scientific reports**.
 
-💡 How to use
+How to use
 - **Language**: You can ask me your questions in any language. 
 - **Audience**: You can specify your audience (children, general public, experts) to get a more adapted answer.
 - **Sources**: You can choose to search in the IPCC or IPBES reports, or both.
 
-⚠️ Limitations
+Limitations
 *Please note that the AI is not perfect and may sometimes give irrelevant answers. If you are not satisfied with the answer, please ask a more specific question or report your feedback to help us improve the system.*
 
-❓ What do you want to learn ?
+What do you want to learn ?
 """
 
 
@@ -501,21 +305,20 @@ def vote(data: gr.LikeData):
         print(data)
 
 
-def change_tab():
-    return gr.Tabs.update(selected=1)
 
-
-with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
+with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main-component") as demo:
     # user_id_state = gr.State([user_id])
 
-    with gr.Tab("🌍 ClimateQ&A"):
+    with gr.Tab("ClimateQ&A"):
 
         with gr.Row(elem_id="chatbot-row"):
             with gr.Column(scale=2):
                 # state = gr.State([system_template])
-                bot = gr.Chatbot(
-                    value=[[None,init_prompt]],
-                    show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",avatar_images = ("assets/logo4.png",None))
+                chatbot = gr.Chatbot(
+                    value=[(None,init_prompt)],
+                    show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",
+                    avatar_images = ("https://i.ibb.co/YNyd5W2/logo4.png",None),
+                )#,avatar_images = ("assets/logo4.png",None))
                 
                 # bot.like(vote,None,None)
 
@@ -523,71 +326,59 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 
                 with gr.Row(elem_id = "input-message"):
                     textbox=gr.Textbox(placeholder="Ask me anything here!",show_label=False,scale=1,lines = 1,interactive = True)
-                    # submit_button = gr.Button(">",scale = 1,elem_id = "submit-button")
 
 
             with gr.Column(scale=1, variant="panel",elem_id = "right-panel"):
 
 
                 with gr.Tabs() as tabs:
-                    with gr.TabItem("📝 Examples",elem_id = "tab-examples",id = 0):
+                    with gr.TabItem("Examples",elem_id = "tab-examples",id = 0):
                                         
-                        examples_hidden = gr.Textbox(elem_id="hidden-message")
+                        examples_hidden = gr.Textbox(visible = False)
+                        first_key = list(QUESTIONS.keys())[0]
+                        dropdown_samples = gr.Dropdown(QUESTIONS.keys(),value = first_key,interactive = True,show_label = True,label = "Select a category of sample questions",elem_id = "dropdown-samples")
 
-                        examples_questions = gr.Examples(
-                            [
-                                "Is climate change caused by humans?",
-                                "What evidence do we have of climate change?",
-                                "What are the impacts of climate change?",
-                                "Can climate change be reversed?",
-                                "What is the difference between climate change and global warming?",
-                                "What can individuals do to address climate change?",
-                                "What are the main causes of climate change?",
-                                "What is the Paris Agreement and why is it important?",
-                                "Which industries have the highest GHG emissions?",
-                                "Is climate change a hoax created by the government or environmental organizations?",
-                                "What is the relationship between climate change and biodiversity loss?",
-                                "What is the link between gender equality and climate change?",
-                                "Is the impact of climate change really as severe as it is claimed to be?",
-                                "What is the impact of rising sea levels?",
-                                "What are the different greenhouse gases (GHG)?",
-                                "What is the warming power of methane?",
-                                "What is the jet stream?",
-                                "What is the breakdown of carbon sinks?",
-                                "How do the GHGs work ? Why does temperature increase ?",
-                                "What is the impact of global warming on ocean currents?",
-                                "How much warming is possible in 2050?",
-                                "What is the impact of climate change in Africa?",
-                                "Will climate change accelerate diseases and epidemics like COVID?",
-                                "What are the economic impacts of climate change?",
-                                "How much is the cost of inaction ?",
-                                "What is the relationship between climate change and poverty?",
-                                "What are the most effective strategies and technologies for reducing greenhouse gas (GHG) emissions?",
-                                "Is economic growth possible? What do you think about degrowth?",
-                                "Will technology save us?",
-                                "Is climate change a natural phenomenon ?",
-                                "Is climate change really happening or is it just a natural fluctuation in Earth's temperature?",
-                                "Is the scientific consensus on climate change really as strong as it is claimed to be?",
-                            ],
-                            [examples_hidden],
-                            examples_per_page=10,
-                            run_on_click=False,
-                            # cache_examples=True,
-                        )
+                        samples = []
+                        for i,key in enumerate(QUESTIONS.keys()):
 
-                    with gr.Tab("📚 Citations",elem_id = "tab-citations",id = 1):
+                            examples_visible = True if i == 0 else False
+
+                            with gr.Row(visible = examples_visible) as group_examples:
+
+                                examples_questions = gr.Examples(
+                                    QUESTIONS[key],
+                                    [examples_hidden],
+                                    examples_per_page=8,
+                                    run_on_click=False,
+                                    elem_id=f"examples{i}",
+                                    # label = "Click on the example question or enter your own",
+                                    # cache_examples=True,
+                                )
+                            
+                            samples.append(group_examples)
+
+
+                    with gr.Tab("Citations",elem_id = "tab-citations",id = 1):
                         sources_textbox = gr.HTML(show_label=False, elem_id="sources-textbox")
                         docs_textbox = gr.State("")
 
-                    with gr.Tab("⚙️ Configuration",elem_id = "tab-config",id = 2):
+                    with gr.Tab("Configuration",elem_id = "tab-config",id = 2):
 
                         gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
 
 
                         dropdown_sources = gr.CheckboxGroup(
                             ["IPCC", "IPBES"],
-                            label="Select reports",
+                            label="Select source",
                             value=["IPCC"],
+                            interactive=True,
+                        )
+
+                        dropdown_reports = gr.Dropdown(
+                            POSSIBLE_REPORTS,
+                            label="Or select specific reports",
+                            multiselect=True,
+                            value=None,
                             interactive=True,
                         )
 
@@ -601,24 +392,56 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
+                    with gr.Tab("Images",elem_id = "tab-images",id = 3):
+                        gallery = gr.Gallery()
 
 
-                # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
+                def start_chat(query,history):
+                    history = history + [(query,"")]
+                    return (gr.update(interactive = False),gr.update(selected=1),history)
+                
+                def finish_chat():
+                    return (gr.update(interactive = True,value = ""))
+
                 (textbox
-                    .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                    .success(change_tab,None,tabs)
-                    .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-                    .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
-                    .success(lambda x : textbox,[textbox],[textbox])
+                    .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False)
+                    .success(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery])
+                    .success(finish_chat, None, [textbox])
                 )
 
                 (examples_hidden
-                    .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                    .success(change_tab,None,tabs)
-                    .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-                    .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
-                    .success(lambda x : textbox,[textbox],[textbox])
+                    .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False)
+                    .success(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery])
+                    .success(finish_chat, None, [textbox])
                 )
+
+
+                def change_sample_questions(key):
+                    index = list(QUESTIONS.keys()).index(key)
+                    visible_bools = [False] * len(samples)
+                    visible_bools[index] = True
+                    return [gr.update(visible=visible_bools[i]) for i in range(len(samples))]
+
+
+
+                dropdown_samples.change(change_sample_questions,dropdown_samples,samples)
+
+                # # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
+                # (textbox
+                #     .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+                #     .success(change_tab,None,tabs)
+                #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+                #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
+                #     .success(lambda x : textbox,[textbox],[textbox])
+                # )
+
+                # (examples_hidden
+                #     .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+                #     .success(change_tab,None,tabs)
+                #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+                #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
+                #     .success(lambda x : textbox,[textbox],[textbox])
+                # )
                 # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
                 #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
                 #     )
@@ -641,7 +464,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
 #---------------------------------------------------------------------------------------
 
 
-    with gr.Tab("ℹ️ About ClimateQ&A",elem_classes = "max-height"):
+    with gr.Tab("About ClimateQ&A",elem_classes = "max-height other-tabs"):
         with gr.Row():
             with gr.Column(scale=1):
                 gr.Markdown(
@@ -667,7 +490,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
             with gr.Column(scale=1):
                 gr.Markdown(
                     """
-        ### 💪 Getting started
+        ### Getting started
         - In the chatbot section, simply type your climate-related question, and ClimateQ&A will provide an answer with references to relevant IPCC reports.
             - ClimateQ&A retrieves specific passages from the IPCC reports to help answer your question accurately.
             - Source information, including page numbers and passages, is displayed on the right side of the screen for easy verification.
@@ -679,7 +502,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
             with gr.Column(scale=1):
                 gr.Markdown(
                     """
-        ### ⚠️ Limitations
+        ### Limitations
         <div class="warning-box">
         <ul>
             <li>Please note that, like any AI, the model may occasionally generate an inaccurate or imprecise answer. Always refer to the provided sources to verify the validity of the information given. If you find any issues with the response, kindly provide feedback to help improve the system.</li>
@@ -689,11 +512,11 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
                 )
 
 
-    with gr.Tab("📧 Contact, feedback and feature requests"):
+    with gr.Tab("Contact, feedback and feature requests",elem_classes = "max-height other-tabs"):
         gr.Markdown(
             """
 
-        🤞 For any question or press request, contact Théo Alves Da Costa at <b>theo.alvesdacosta@ekimetrics.com</b>
+        For any question or press request, contact Théo Alves Da Costa at <b>theo.alvesdacosta@ekimetrics.com</b>
 
         - ClimateQ&A welcomes community contributions. To participate, head over to the Community Tab and create a "New Discussion" to ask questions and share your insights.
         - Provide feedback through email, letting us know which insights you found accurate, useful, or not. Your input will help us improve the platform.
@@ -731,7 +554,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     # openai_api_key_textbox.change(set_openai_api_key, inputs=[openai_api_key_textbox])
     # openai_api_key_textbox.submit(set_openai_api_key, inputs=[openai_api_key_textbox])
 
-    with gr.Tab("📚 Sources",elem_classes = "max-height"):
+    with gr.Tab("Sources",elem_classes = "max-height other-tabs"):
         gr.Markdown("""
     | Source | Report | URL | Number of pages | Release date |
     | --- | --- | --- | --- | --- |
@@ -772,7 +595,7 @@ with gr.Blocks(title="🌍 Climate Q&A", css="style.css", theme=theme) as demo:
     IPBES | Summary for Policymakers. Assessment Report on Land Degradation and Restoration. | https://zenodo.org/record/3237393/files/ipbes_assessment_report_ldra_EN.pdf | 48 | 2018
 """)
 
-    with gr.Tab("🛢️ Carbon Footprint"):
+    with gr.Tab("Carbon Footprint",elem_classes = "max-height other-tabs"):
         gr.Markdown("""
 
 Carbon emissions were measured during the development and inference process using CodeCarbon [https://github.com/mlco2/codecarbon](https://github.com/mlco2/codecarbon)
@@ -789,8 +612,20 @@ Or around 2 to 4 times more than a typical Google search.
 """
     )
         
-    with gr.Tab("🪄 Changelog"):
+    with gr.Tab("Changelog",elem_classes = "max-height other-tabs"):
         gr.Markdown("""
+                    
+##### Upcoming features
+- Figures retrieval
+- Conversational chat
+- Intent routing
+- Report filtering
+                    
+##### v1.2.0 - *2023-11-27
+- Added new IPBES assessment on Invasive Species (SPM and chapters)
+- Switched all the codebase to LCEL (Langchain Expression Language)
+- Added sample questions by category
+- Switched embeddings from old ``sentence-transformers/multi-qa-mpnet-base-dot-v1`` to ``BAAI/bge-base-en-v1.5``
 
 ##### v1.1.0 - *2023-10-16*
 - ClimateQ&A on Hugging Face is finally working again with all the new features !
@@ -807,6 +642,6 @@ Or around 2 to 4 times more than a typical Google search.
 """
     )
 
-    demo.queue(concurrency_count=16)
+    # demo.queue(concurrency_count=16)
 
 demo.launch()
