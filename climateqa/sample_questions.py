@@ -1,8 +1,9 @@
 
 QUESTIONS = {
     "Popular Questions": [
-        "What are the main causes of climate change?",
+        "Is climate change real?",
         "What evidence do we have of climate change?",
+        "Are human activities causing global warming?",
         "What are the impacts of climate change?",
         "Can climate change be reversed?",
         "What is the difference between climate change and global warming?",
