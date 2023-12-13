@@ -86,6 +86,7 @@ def parse_output_llm_with_sources(output):
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
+llm = get_llm(max_tokens = 1024,temperature = 0.0)
 
 
 def make_pairs(lst):
@@ -123,7 +124,6 @@ async def chat(query,history,audience,sources,reports):
     if len(reports) == 0:
         reports = []
 
-    llm = get_llm(max_tokens = 1024,temperature = 0.0)
     retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,reports = reports,k_summary = 3,k_total = 10,threshold=0.7)
     rag_chain = make_rag_chain(retriever,llm)
 
@@ -164,12 +164,16 @@ async def chat(query,history,audience,sources,reports):
             output_query = op["value"]["question"]
         
         elif op['path'] == retriever_path_id: # documents
-            docs = op['value']['documents'] # List[Document]
-            docs_html = []
-            for i, d in enumerate(docs, 1):
-                docs_html.append(make_html_source(d, i))
-            docs_html = "".join(docs_html)
-
+            try:
+                docs = op['value']['documents'] # List[Document]
+                docs_html = []
+                for i, d in enumerate(docs, 1):
+                    docs_html.append(make_html_source(d, i))
+                docs_html = "".join(docs_html)
+            except TypeError:
+                print("No documents found")
+                print("op: ",op)
+                continue
 
         elif op['path'] == final_answer_path_id: # final answer
             new_token = op['value'] # str
@@ -178,7 +182,8 @@ async def chat(query,history,audience,sources,reports):
             answer_yet = parse_output_llm_with_sources(answer_yet)
             history[-1] = (query,answer_yet)
 
-
+        else:
+            continue
 
         history = [tuple(x) for x in history]
         yield history,docs_html,output_query,output_language,gallery
@@ -396,13 +401,13 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
                 (textbox
                     .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False)
-                    .success(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery])
+                    .success(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8)
                     .success(finish_chat, None, [textbox])
                 )
 
                 (examples_hidden
                     .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False)
-                    .success(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery])
+                    .success(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8)
                     .success(finish_chat, None, [textbox])
                 )
 
@@ -636,4 +641,4 @@ Or around 2 to 4 times more than a typical Google search.
 
     demo.queue()
 
-demo.launch()
+demo.launch(max_threads = 8)

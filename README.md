@@ -11,3 +11,6 @@ pinned: false
 ---
 
 # Climate Q&A
+
+
+To run locally run ``gradio app.py`` 
