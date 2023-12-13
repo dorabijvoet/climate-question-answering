@@ -347,6 +347,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                                     examples_per_page=8,
                                     run_on_click=False,
                                     elem_id=f"examples{i}",
+                                    api_name=f"examples{i}",
                                     # label = "Click on the example question or enter your own",
                                     # cache_examples=True,
                                 )
@@ -400,15 +401,15 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                     return (gr.update(interactive = True,value = ""))
 
                 (textbox
-                    .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False)
-                    .success(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8)
-                    .success(finish_chat, None, [textbox])
+                    .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
+                    .success(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_textbox")
+                    .success(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
                 )
 
                 (examples_hidden
-                    .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False)
-                    .success(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8)
-                    .success(finish_chat, None, [textbox])
+                    .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
+                    .success(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_examples")
+                    .success(finish_chat, None, [textbox],api_name = "finish_chat_examples")
                 )
 
 
