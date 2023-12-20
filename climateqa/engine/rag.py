@@ -72,7 +72,7 @@ def make_rag_chain(retriever,llm):
 
     # ------- FINAL CHAIN
     # Build the final chain
-    rag_chain = reformulation | find_documents | answer
+    rag_chain = reformulation | find_documents | answer_with_docs
 
     return rag_chain
 

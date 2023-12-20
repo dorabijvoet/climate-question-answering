@@ -148,7 +148,8 @@ async def chat(query,history,audience,sources,reports):
 
     reformulated_question_path_id = "/logs/flatten_dict/final_output"
     retriever_path_id = "/logs/Retriever/final_output"
-    final_answer_path_id = "/logs/AzureChatOpenAI:2/streamed_output_str/-"
+    streaming_output_path_id = "/logs/AzureChatOpenAI:2/streamed_output_str/-"
+    final_output_path_id = "/streamed_output/-"
 
     docs_html = ""
     output_query = ""
@@ -158,6 +159,7 @@ async def chat(query,history,audience,sources,reports):
     async for op in result:
 
         op = op.ops[0]
+        print(op)
 
         if op['path'] == reformulated_question_path_id: # reforulated question
             output_language = op['value']["language"] # str
@@ -175,12 +177,23 @@ async def chat(query,history,audience,sources,reports):
                 print("op: ",op)
                 continue
 
-        elif op['path'] == final_answer_path_id: # final answer
+        elif op['path'] == streaming_output_path_id: # final answer
             new_token = op['value'] # str
             time.sleep(0.03)
             answer_yet = history[-1][1] + new_token
             answer_yet = parse_output_llm_with_sources(answer_yet)
             history[-1] = (query,answer_yet)
+        
+        # elif op['path'] == final_output_path_id:
+        #     final_output = op['value']
+
+        #     if "answer" in final_output:
+            
+        #         final_output = final_output["answer"]
+        #         print(final_output)
+        #         answer = history[-1][1] + final_output
+        #         answer = parse_output_llm_with_sources(answer)
+        #         history[-1] = (query,answer)
 
         else:
             continue
