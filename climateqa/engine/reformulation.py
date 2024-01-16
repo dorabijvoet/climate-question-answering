@@ -1,11 +1,10 @@
 
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-from langchain.prompts import PromptTemplate
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
+from langchain.output_parsers.structured import StructuredOutputParser, ResponseSchema
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda, RunnableBranch
 
 from climateqa.engine.prompts import reformulation_prompt_template
-
+from climateqa.engine.utils import pass_values, flatten_dict
 
 
 response_schemas = [
@@ -15,6 +14,12 @@ response_schemas = [
 output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
 format_instructions = output_parser.get_format_instructions()
 
+def fallback_default_values(x):
+    if x["question"] is None:
+        x["question"] = x["query"]
+        x["language"] = "english"
+    
+    return x
 
 def make_reformulation_chain(llm):
 
@@ -25,4 +30,13 @@ def make_reformulation_chain(llm):
     )
 
     chain = (prompt | llm.bind(stop=["```"]) | output_parser)
-    return chain
+
+    reformulation_chain = (
+        {"reformulation":chain,**pass_values(["query"])}
+        | RunnablePassthrough()
+        | flatten_dict
+        | fallback_default_values
+    )
+
+
+    return reformulation_chain

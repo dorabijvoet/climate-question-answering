@@ -1,14 +1,15 @@
 from operator import itemgetter
 
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnablePassthrough, RunnableLambda, RunnableBranch
-from langchain.prompts.prompt import PromptTemplate
-from langchain.schema import format_document
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda, RunnableBranch
+from langchain_core.prompts.prompt import PromptTemplate
+from langchain_core.prompts.base import format_document
 
 from climateqa.engine.reformulation import make_reformulation_chain
 from climateqa.engine.prompts import answer_prompt_template,answer_prompt_without_docs_template
 from climateqa.engine.utils import pass_values, flatten_dict
+
 
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
 
@@ -72,7 +73,7 @@ def make_rag_chain(retriever,llm):
 
     # ------- FINAL CHAIN
     # Build the final chain
-    rag_chain = reformulation | find_documents | answer_with_docs
+    rag_chain = reformulation | find_documents | answer
 
     return rag_chain
 

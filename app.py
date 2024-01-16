@@ -104,7 +104,7 @@ def serialize_docs(docs):
     return new_docs
 
 
-async def chat(query,history,audience,sources,reports):
+def chat(query,history,audience,sources,reports):
     """taking a query and a message history, use a pipeline (reformulation, retriever, answering) to yield a tuple of:
     (messages in gradio format, messages in langchain format, source documents)"""
 
@@ -144,62 +144,102 @@ async def chat(query,history,audience,sources,reports):
     #     memory.chat_memory.add_message(message)
     
     inputs = {"query": query,"audience": audience_prompt}
-    result = rag_chain.astream_log(inputs)
+    # result = rag_chain.astream_log(inputs)
+    result = rag_chain.stream(inputs)
 
     reformulated_question_path_id = "/logs/flatten_dict/final_output"
     retriever_path_id = "/logs/Retriever/final_output"
     streaming_output_path_id = "/logs/AzureChatOpenAI:2/streamed_output_str/-"
     final_output_path_id = "/streamed_output/-"
 
-    docs_html = ""
+    docs_html = "No sources found for this question"
     output_query = ""
     output_language = ""
     gallery = []
-    
-    async for op in result:
 
-        op = op.ops[0]
-        print(op)
+    for output in result:
 
-        if op['path'] == reformulated_question_path_id: # reforulated question
-            output_language = op['value']["language"] # str
-            output_query = op["value"]["question"]
-        
-        elif op['path'] == retriever_path_id: # documents
+        if "language" in output:
+            output_language = output["language"]
+        if "question" in output:
+            output_query = output["question"]
+        if "docs" in output:
+
             try:
-                docs = op['value']['documents'] # List[Document]
+                docs = output['docs'] # List[Document]
                 docs_html = []
                 for i, d in enumerate(docs, 1):
                     docs_html.append(make_html_source(d, i))
                 docs_html = "".join(docs_html)
             except TypeError:
                 print("No documents found")
-                print("op: ",op)
                 continue
 
-        elif op['path'] == streaming_output_path_id: # final answer
-            new_token = op['value'] # str
+        if "answer" in output:
+            new_token = output["answer"] # str
             time.sleep(0.03)
             answer_yet = history[-1][1] + new_token
             answer_yet = parse_output_llm_with_sources(answer_yet)
             history[-1] = (query,answer_yet)
-        
-        # elif op['path'] == final_output_path_id:
-        #     final_output = op['value']
 
-        #     if "answer" in final_output:
-            
-        #         final_output = final_output["answer"]
-        #         print(final_output)
-        #         answer = history[-1][1] + final_output
-        #         answer = parse_output_llm_with_sources(answer)
-        #         history[-1] = (query,answer)
-
-        else:
-            continue
-
-        history = [tuple(x) for x in history]
         yield history,docs_html,output_query,output_language,gallery
+
+
+
+    # async def fallback_iterator(iterable):
+    #     async for item in iterable:
+    #         try:
+    #             yield item
+    #         except Exception as e:
+    #             print(f"Error in fallback iterator: {e}")
+    #             raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
+
+        
+    # async for op in fallback_iterator(result):
+
+    #     op = op.ops[0]
+    #     print("yo",op)
+
+    #     if op['path'] == reformulated_question_path_id: # reforulated question
+    #         output_language = op['value']["language"] # str
+    #         output_query = op["value"]["question"]
+        
+    #     elif op['path'] == retriever_path_id: # documents
+    #         try:
+    #             docs = op['value']['documents'] # List[Document]
+    #             docs_html = []
+    #             for i, d in enumerate(docs, 1):
+    #                 docs_html.append(make_html_source(d, i))
+    #             docs_html = "".join(docs_html)
+    #         except TypeError:
+    #             print("No documents found")
+    #             print("op: ",op)
+    #             continue
+
+    #     elif op['path'] == streaming_output_path_id: # final answer
+    #         new_token = op['value'] # str
+    #         time.sleep(0.03)
+    #         answer_yet = history[-1][1] + new_token
+    #         answer_yet = parse_output_llm_with_sources(answer_yet)
+    #         history[-1] = (query,answer_yet)
+        
+    #     # elif op['path'] == final_output_path_id:
+    #     #     final_output = op['value']
+
+    #     #     if "answer" in final_output:
+            
+    #     #         final_output = final_output["answer"]
+    #     #         print(final_output)
+    #     #         answer = history[-1][1] + final_output
+    #     #         answer = parse_output_llm_with_sources(answer)
+    #     #         history[-1] = (query,answer)
+
+    #     else:
+    #         continue
+
+    #     history = [tuple(x) for x in history]
+    #     yield history,docs_html,output_query,output_language,gallery
+
 
     # Log answer on Azure Blob Storage
     if os.getenv("GRADIO_ENV") != "local":
@@ -295,12 +335,12 @@ def log_on_azure(file, logs, share_client):
 init_prompt = """
 Hello, I am ClimateQ&A, a conversational assistant designed to help you understand climate change and biodiversity loss. I will answer your questions by **sifting through the IPCC and IPBES scientific reports**.
 
-How to use
+❓ How to use
 - **Language**: You can ask me your questions in any language. 
 - **Audience**: You can specify your audience (children, general public, experts) to get a more adapted answer.
 - **Sources**: You can choose to search in the IPCC or IPBES reports, or both.
 
-Limitations
+⚠️ Limitations
 *Please note that the AI is not perfect and may sometimes give irrelevant answers. If you are not satisfied with the answer, please ask a more specific question or report your feedback to help us improve the system.*
 
 What do you want to learn ?
@@ -326,7 +366,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                 chatbot = gr.Chatbot(
                     value=[(None,init_prompt)],
                     show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",
-                    avatar_images = ("https://i.ibb.co/YNyd5W2/logo4.png",None),
+                    avatar_images = (None,"https://i.ibb.co/YNyd5W2/logo4.png"),
                 )#,avatar_images = ("assets/logo4.png",None))
                 
                 # bot.like(vote,None,None)
@@ -408,6 +448,8 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
                 def start_chat(query,history):
                     history = history + [(query,"")]
+                    history = [tuple(x) for x in history]
+                    print(history)
                     return (gr.update(interactive = False),gr.update(selected=1),history)
                 
                 def finish_chat():

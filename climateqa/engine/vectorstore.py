@@ -3,7 +3,7 @@
 # And https://python.langchain.com/docs/integrations/vectorstores/pinecone
 import os
 import pinecone
-from langchain.vectorstores import Pinecone
+from langchain_community.vectorstores import Pinecone
 
 # LOAD ENVIRONMENT VARIABLES
 try:
@@ -23,6 +23,7 @@ def get_pinecone_vectorstore(embeddings,text_key = "text"):
 
     index_name = os.getenv("PINECONE_API_INDEX")
     vectorstore = Pinecone.from_existing_index(index_name, embeddings,text_key = text_key)
+
     return vectorstore
 
 

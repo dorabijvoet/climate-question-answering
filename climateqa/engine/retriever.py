@@ -2,10 +2,12 @@
 
 import pandas as pd
 
-from langchain.schema.retriever import BaseRetriever, Document
-from langchain.vectorstores.base import VectorStoreRetriever
-from langchain.vectorstores import VectorStore
-from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStoreRetriever
+from langchain_core.documents.base import Document
+from langchain_core.vectorstores import VectorStore
+from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
+
 from typing import List
 from pydantic import Field
 
