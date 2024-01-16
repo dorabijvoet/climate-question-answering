@@ -671,8 +671,12 @@ Or around 2 to 4 times more than a typical Google search.
 - Figures retrieval and multimodal system
 - Conversational chat
 - Intent routing
+- Local environment setup
                     
-##### v1.2.0 - *2023-11-27
+##### v1.2.1 - *2024-01-16*
+- BUG - corrected asynchronous bug failing the chatbot frequently
+                    
+##### v1.2.0 - *2023-11-27*
 - Added new IPBES assessment on Invasive Species (SPM and chapters)
 - Switched all the codebase to LCEL (Langchain Expression Language)
 - Added sample questions by category
