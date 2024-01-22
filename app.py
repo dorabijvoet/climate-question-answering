@@ -457,14 +457,14 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
                 (textbox
                     .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
-                    .success(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_textbox")
-                    .success(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
+                    .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_textbox")
+                    .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
                 )
 
                 (examples_hidden
                     .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
-                    .success(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_examples")
-                    .success(finish_chat, None, [textbox],api_name = "finish_chat_examples")
+                    .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_examples")
+                    .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
                 )
 
 
