@@ -18,6 +18,7 @@ def get_llm(max_tokens = 1024,temperature = 0.0,verbose = True,streaming = False
         openai_api_type = "azure",
         max_tokens = max_tokens,
         temperature = temperature,
+        request_timeout = 60,
         verbose = verbose,
         streaming = streaming,
         **kwargs,

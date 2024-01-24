@@ -60,7 +60,7 @@ credential = {
 }
 
 account_url = os.environ["BLOB_ACCOUNT_URL"]
-file_share_name = "climategpt"
+file_share_name = "climateqa"
 service = ShareServiceClient(account_url=account_url, credential=credential)
 share_client = service.get_share_client(file_share_name)
 
@@ -104,7 +104,25 @@ def serialize_docs(docs):
     return new_docs
 
 
-def chat(query,history,audience,sources,reports):
+# import asyncio
+# from typing import Any, Dict, List
+# from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
+
+# class MyCustomAsyncHandler(AsyncCallbackHandler):
+#     """Async callback handler that can be used to handle callbacks from langchain."""
+
+#     async def on_chain_start(
+#         self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+#     ) -> Any:
+#         """Run when chain starts running."""
+#         print("zzzz....")
+#         await asyncio.sleep(3)
+#         print(f"on_chain_start {serialized['name']}")
+#         # raise gr.Error("ClimateQ&A Error: Timeout, try another question and if the error remains, you can contact us :)")
+
+
+
+async def chat(query,history,audience,sources,reports):
     """taking a query and a message history, use a pipeline (reformulation, retriever, answering) to yield a tuple of:
     (messages in gradio format, messages in langchain format, source documents)"""
 
@@ -124,7 +142,8 @@ def chat(query,history,audience,sources,reports):
     if len(reports) == 0:
         reports = []
 
-    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,reports = reports,k_summary = 3,k_total = 10,threshold=0.7)
+
+    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,reports = reports,k_summary = 3,k_total = 10,threshold=0.5)
     rag_chain = make_rag_chain(retriever,llm)
 
     source_string = ""
@@ -144,45 +163,45 @@ def chat(query,history,audience,sources,reports):
     #     memory.chat_memory.add_message(message)
     
     inputs = {"query": query,"audience": audience_prompt}
-    # result = rag_chain.astream_log(inputs)
-    result = rag_chain.stream(inputs)
+    result = rag_chain.astream_log(inputs) #{"callbacks":[MyCustomAsyncHandler()]})
+    # result = rag_chain.stream(inputs)
 
     reformulated_question_path_id = "/logs/flatten_dict/final_output"
     retriever_path_id = "/logs/Retriever/final_output"
     streaming_output_path_id = "/logs/AzureChatOpenAI:2/streamed_output_str/-"
     final_output_path_id = "/streamed_output/-"
 
-    docs_html = "No sources found for this question"
+    docs_html = ""
     output_query = ""
     output_language = ""
     gallery = []
 
-    for output in result:
+    # for output in result:
 
-        if "language" in output:
-            output_language = output["language"]
-        if "question" in output:
-            output_query = output["question"]
-        if "docs" in output:
+    #     if "language" in output:
+    #         output_language = output["language"]
+    #     if "question" in output:
+    #         output_query = output["question"]
+    #     if "docs" in output:
 
-            try:
-                docs = output['docs'] # List[Document]
-                docs_html = []
-                for i, d in enumerate(docs, 1):
-                    docs_html.append(make_html_source(d, i))
-                docs_html = "".join(docs_html)
-            except TypeError:
-                print("No documents found")
-                continue
+    #         try:
+    #             docs = output['docs'] # List[Document]
+    #             docs_html = []
+    #             for i, d in enumerate(docs, 1):
+    #                 docs_html.append(make_html_source(d, i))
+    #             docs_html = "".join(docs_html)
+    #         except TypeError:
+    #             print("No documents found")
+    #             continue
 
-        if "answer" in output:
-            new_token = output["answer"] # str
-            time.sleep(0.03)
-            answer_yet = history[-1][1] + new_token
-            answer_yet = parse_output_llm_with_sources(answer_yet)
-            history[-1] = (query,answer_yet)
+    #     if "answer" in output:
+    #         new_token = output["answer"] # str
+    #         time.sleep(0.03)
+    #         answer_yet = history[-1][1] + new_token
+    #         answer_yet = parse_output_llm_with_sources(answer_yet)
+    #         history[-1] = (query,answer_yet)
 
-        yield history,docs_html,output_query,output_language,gallery
+    #     yield history,docs_html,output_query,output_language,gallery
 
 
 
@@ -195,54 +214,54 @@ def chat(query,history,audience,sources,reports):
     #             raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
 
         
-    # async for op in fallback_iterator(result):
+    async for op in result:
 
-    #     op = op.ops[0]
-    #     print("yo",op)
+        op = op.ops[0]
+        # print("ITERATION",op)
 
-    #     if op['path'] == reformulated_question_path_id: # reforulated question
-    #         output_language = op['value']["language"] # str
-    #         output_query = op["value"]["question"]
+        if op['path'] == reformulated_question_path_id: # reforulated question
+            output_language = op['value']["language"] # str
+            output_query = op["value"]["question"]
         
-    #     elif op['path'] == retriever_path_id: # documents
-    #         try:
-    #             docs = op['value']['documents'] # List[Document]
-    #             docs_html = []
-    #             for i, d in enumerate(docs, 1):
-    #                 docs_html.append(make_html_source(d, i))
-    #             docs_html = "".join(docs_html)
-    #         except TypeError:
-    #             print("No documents found")
-    #             print("op: ",op)
-    #             continue
+        elif op['path'] == retriever_path_id: # documents
+            try:
+                docs = op['value']['documents'] # List[Document]
+                docs_html = []
+                for i, d in enumerate(docs, 1):
+                    docs_html.append(make_html_source(d, i))
+                docs_html = "".join(docs_html)
+            except TypeError:
+                print("No documents found")
+                print("op: ",op)
+                continue
 
-    #     elif op['path'] == streaming_output_path_id: # final answer
-    #         new_token = op['value'] # str
-    #         time.sleep(0.03)
-    #         answer_yet = history[-1][1] + new_token
-    #         answer_yet = parse_output_llm_with_sources(answer_yet)
-    #         history[-1] = (query,answer_yet)
+        elif op['path'] == streaming_output_path_id: # final answer
+            new_token = op['value'] # str
+            time.sleep(0.02)
+            answer_yet = history[-1][1] + new_token
+            answer_yet = parse_output_llm_with_sources(answer_yet)
+            history[-1] = (query,answer_yet)
         
-    #     # elif op['path'] == final_output_path_id:
-    #     #     final_output = op['value']
+        # elif op['path'] == final_output_path_id:
+        #     final_output = op['value']
 
-    #     #     if "answer" in final_output:
+        #     if "answer" in final_output:
             
-    #     #         final_output = final_output["answer"]
-    #     #         print(final_output)
-    #     #         answer = history[-1][1] + final_output
-    #     #         answer = parse_output_llm_with_sources(answer)
-    #     #         history[-1] = (query,answer)
+        #         final_output = final_output["answer"]
+        #         print(final_output)
+        #         answer = history[-1][1] + final_output
+        #         answer = parse_output_llm_with_sources(answer)
+        #         history[-1] = (query,answer)
 
-    #     else:
-    #         continue
+        else:
+            continue
 
-    #     history = [tuple(x) for x in history]
-    #     yield history,docs_html,output_query,output_language,gallery
+        history = [tuple(x) for x in history]
+        yield history,docs_html,output_query,output_language,gallery
 
 
     # Log answer on Azure Blob Storage
-    if os.getenv("GRADIO_ENV") != "local":
+    if os.getenv("GRADIO_ENV") == "local":
         timestamp = str(datetime.now().timestamp())
         file = timestamp + ".json"
         prompt = history[-1][0]
@@ -269,6 +288,31 @@ def chat(query,history,audience,sources,reports):
     # memory.save_context(inputs, {"answer": gradio_format[-1][1]})
     # yield gradio_format, memory.load_memory_variables({})["history"], source_string
     
+# async def chat_with_timeout(query, history, audience, sources, reports, timeout_seconds=2):
+#     async def timeout_gen(async_gen, timeout):
+#         try:
+#             while True:
+#                 try:
+#                     yield await asyncio.wait_for(async_gen.__anext__(), timeout)
+#                 except StopAsyncIteration:
+#                     break
+#         except asyncio.TimeoutError:
+#             raise gr.Error("Operation timed out. Please try again.")
+
+#     return timeout_gen(chat(query, history, audience, sources, reports), timeout_seconds)
+
+
+
+# # A wrapper function that includes a timeout
+# async def chat_with_timeout(query, history, audience, sources, reports, timeout_seconds=2):
+#     try:
+#         # Use asyncio.wait_for to apply a timeout to the chat function
+#         return await asyncio.wait_for(chat(query, history, audience, sources, reports), timeout_seconds)
+#     except asyncio.TimeoutError:
+#         # Handle the timeout error as desired
+#         raise gr.Error("Operation timed out. Please try again.")
+
+
 
 
 def make_html_source(source,i):
@@ -701,4 +745,4 @@ Or around 2 to 4 times more than a typical Google search.
 
     demo.queue()
 
-demo.launch(max_threads = 8)
+demo.launch()

@@ -1,7 +1,6 @@
 
 QUESTIONS = {
     "Popular Questions": [
-        "Is climate change real?",
         "What evidence do we have of climate change?",
         "Are human activities causing global warming?",
         "What are the impacts of climate change?",
