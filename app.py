@@ -64,6 +64,8 @@ file_share_name = "climateqa"
 service = ShareServiceClient(account_url=account_url, credential=credential)
 share_client = service.get_share_client(file_share_name)
 
+print("YO",account_url,credential)
+
 user_id = create_user_id()
 
 
@@ -213,74 +215,87 @@ async def chat(query,history,audience,sources,reports):
     #             print(f"Error in fallback iterator: {e}")
     #             raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
 
-        
-    async for op in result:
+    try:
+        async for op in result:
 
-        op = op.ops[0]
-        # print("ITERATION",op)
 
-        if op['path'] == reformulated_question_path_id: # reforulated question
-            output_language = op['value']["language"] # str
-            output_query = op["value"]["question"]
+            op = op.ops[0]
+            # print("ITERATION",op)
+
+            if op['path'] == reformulated_question_path_id: # reforulated question
+                try:
+                    output_language = op['value']["language"] # str
+                    output_query = op["value"]["question"]
+                except Exception as e:
+                    raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
+            
+            elif op['path'] == retriever_path_id: # documents
+                try:
+                    docs = op['value']['documents'] # List[Document]
+                    docs_html = []
+                    for i, d in enumerate(docs, 1):
+                        docs_html.append(make_html_source(d, i))
+                    docs_html = "".join(docs_html)
+                except TypeError:
+                    print("No documents found")
+                    print("op: ",op)
+                    continue
+
+            elif op['path'] == streaming_output_path_id: # final answer
+                new_token = op['value'] # str
+                time.sleep(0.01)
+                answer_yet = history[-1][1] + new_token
+                answer_yet = parse_output_llm_with_sources(answer_yet)
+                history[-1] = (query,answer_yet)
+
         
-        elif op['path'] == retriever_path_id: # documents
-            try:
-                docs = op['value']['documents'] # List[Document]
-                docs_html = []
-                for i, d in enumerate(docs, 1):
-                    docs_html.append(make_html_source(d, i))
-                docs_html = "".join(docs_html)
-            except TypeError:
-                print("No documents found")
-                print("op: ",op)
+            # elif op['path'] == final_output_path_id:
+            #     final_output = op['value']
+
+            #     if "answer" in final_output:
+                
+            #         final_output = final_output["answer"]
+            #         print(final_output)
+            #         answer = history[-1][1] + final_output
+            #         answer = parse_output_llm_with_sources(answer)
+            #         history[-1] = (query,answer)
+
+            else:
                 continue
 
-        elif op['path'] == streaming_output_path_id: # final answer
-            new_token = op['value'] # str
-            time.sleep(0.02)
-            answer_yet = history[-1][1] + new_token
-            answer_yet = parse_output_llm_with_sources(answer_yet)
-            history[-1] = (query,answer_yet)
-        
-        # elif op['path'] == final_output_path_id:
-        #     final_output = op['value']
+            history = [tuple(x) for x in history]
+            yield history,docs_html,output_query,output_language,gallery
 
-        #     if "answer" in final_output:
-            
-        #         final_output = final_output["answer"]
-        #         print(final_output)
-        #         answer = history[-1][1] + final_output
-        #         answer = parse_output_llm_with_sources(answer)
-        #         history[-1] = (query,answer)
-
-        else:
-            continue
-
-        history = [tuple(x) for x in history]
-        yield history,docs_html,output_query,output_language,gallery
+    except Exception as e:
+        print(f"Error in fallback iterator: {e}")
+        raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
 
 
-    # Log answer on Azure Blob Storage
-    if os.getenv("GRADIO_ENV") == "local":
-        timestamp = str(datetime.now().timestamp())
-        file = timestamp + ".json"
-        prompt = history[-1][0]
-        logs = {
-            "user_id": str(user_id),
-            "prompt": prompt,
-            "query": prompt,
-            "question":output_query,
-            "docs":serialize_docs(docs),
-            "answer": history[-1][1],
-            "time": timestamp,
-        }
-        log_on_azure(file, logs, share_client)
+    try:
+        # Log answer on Azure Blob Storage
+        if os.getenv("GRADIO_ENV") != "local":
+            timestamp = str(datetime.now().timestamp())
+            file = timestamp + ".json"
+            prompt = history[-1][0]
+            logs = {
+                "user_id": str(user_id),
+                "prompt": prompt,
+                "query": prompt,
+                "question":output_query,
+                "docs":serialize_docs(docs),
+                "answer": history[-1][1],
+                "time": timestamp,
+            }
+            log_on_azure(file, logs, share_client)
+    except Exception as e:
+        print(f"Error logging on Azure Blob Storage: {e}")
+        raise gr.Error(f"ClimateQ&A Error: {str(e)[:100]}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
 
 
-    gallery = [x.metadata["image_path"] for x in docs if (len(x.metadata["image_path"]) > 0 and "IAS" in x.metadata["image_path"])]
-    if len(gallery) > 0:
-        gallery = list(set("|".join(gallery).split("|")))
-        gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
+    # gallery = [x.metadata["image_path"] for x in docs if (len(x.metadata["image_path"]) > 0 and "IAS" in x.metadata["image_path"])]
+    # if len(gallery) > 0:
+    #     gallery = list(set("|".join(gallery).split("|")))
+    #     gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
     yield history,docs_html,output_query,output_language,gallery
 
