@@ -3,7 +3,7 @@ openai==1.2.2
 azure-storage-file-share==12.11.1
 azure-storage-blob
 python-dotenv==1.0.0
-langchain==0.1.0
-pinecone-client==2.2.4
+langchain==0.1.4
+pinecone-client==3.0.2
 sentence-transformers
 huggingface-hub
