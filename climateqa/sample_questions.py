@@ -79,6 +79,7 @@ QUESTIONS = {
         "Are human activities causing global warming?",
         "What is the distribution of uncertainty in projected precipitation changes across different time frames ?",
         "What are the anticipated changes in the global water cycle by the end of the 21st century under an intermediate emissions scenario ?",
+        "How are human activities contributing to the spread of invasive alien species?",
     ]
 
 }
