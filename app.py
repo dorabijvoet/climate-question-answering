@@ -292,7 +292,7 @@ async def chat(query,history,audience,sources,reports):
         
         if doc.metadata["chunk_type"] == "image":
             try:
-                key = f"Image {i}"
+                key = f"Image {i+1}"
                 image_path = doc.metadata["image_path"].split("documents/")[1]
                 img = get_image_from_azure_blob_storage(image_path)
 
