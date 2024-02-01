@@ -263,7 +263,7 @@ async def chat(query,history,audience,sources,reports):
             yield history,docs_html,output_query,output_language,gallery
 
     except Exception as e:
-        raise gr.Error(f"ClimateQ&A Error: {e}</br>The error has been noted, try another question and if the error remains, you can contact us :)")
+        raise gr.Error(f"{e}")
 
 
     try:
@@ -285,7 +285,7 @@ async def chat(query,history,audience,sources,reports):
             log_on_azure(file, logs, share_client)
     except Exception as e:
         print(f"Error logging on Azure Blob Storage: {e}")
-        raise gr.Error(f"ClimateQ&A Error: {str(e)[:100]}</br>The error has been noted, try another question and if the error remains, you can contact us :)")
+        raise gr.Error(f"ClimateQ&A Error: {str(e)[:100]} - The error has been noted, try another question and if the error remains, you can contact us :)")
 
     image_dict = {}
     for i,doc in enumerate(docs):
@@ -746,8 +746,14 @@ Or around 2 to 4 times more than a typical Google search.
 - Intent routing
 - Local environment setup
                     
+##### v1.3.0-alpha - *2024-01-31*
+- Completely redesign chunking system mechanism at the parsing phase (hierarchical aggregations, better control to get 256 tokens)
+- Switched to Pinecone serverless for performance improvements
+- Add TOC section for each source in the citations panel as breadcrumbs
+- *EXPERIMENTAL* - Figure retrieval system within the answer (caption pictures with GPT4 Vision and indexing the caption in the retrieval system)
+                    
 ##### v1.2.1 - *2024-01-16*
-- BUG - corrected asynchronous bug failing the chatbot frequently
+- *BUG* - corrected asynchronous bug failing the chatbot frequently
                     
 ##### v1.2.0 - *2023-11-27*
 - Added new IPBES assessment on Invasive Species (SPM and chapters)
