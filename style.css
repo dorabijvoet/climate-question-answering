@@ -296,3 +296,27 @@ body.dark .card-footer span {
     word-break: break-word !important; /* Break words to prevent overflow */
     overflow-wrap: break-word !important; /* Break long words if necessary */
   }
+
+span.chatbot > p > img{
+    margin-top:40px !important;
+    max-height: none !important;
+    max-width: 80% !important;
+    border-radius:0px !important;
+}
+
+
+.chatbot-caption{
+    font-size:11px;
+    font-style:italic;
+    color:#508094;
+}
+
+.ai-generated{
+    font-size:11px!important;
+    font-style:italic;
+    color:#73b8d4 !important;
+}
+
+.card-image > .card-content{
+    background-color:#f1f7fa !important;
+}

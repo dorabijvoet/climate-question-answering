@@ -18,7 +18,8 @@ class ClimateQARetriever(BaseRetriever):
     threshold:float = 0.6
     k_summary:int = 3
     k_total:int = 10
-    namespace:str = "vectors"
+    namespace:str = "vectors",
+    min_size:int = 200,
 
 
     def _get_relevant_documents(
@@ -31,8 +32,8 @@ class ClimateQARetriever(BaseRetriever):
         assert self.k_total > self.k_summary, "k_total should be greater than k_summary"
 
         # Prepare base search kwargs
-
         filters = {}
+
         if len(self.reports) > 0:
             filters["short_name"] = {"$in":self.reports}
         else:
@@ -59,14 +60,14 @@ class ClimateQARetriever(BaseRetriever):
         docs = docs_summaries + docs_full
 
         # Filter if scores are below threshold
-        docs = [x for x in docs if x[1] > self.threshold]
+        # docs = [x for x in docs if x[1] > self.threshold and len(x[0].page_content) > self.min_size]
 
         # Add score to metadata
         results = []
         for i,(doc,score) in enumerate(docs):
             doc.metadata["similarity_score"] = score
             doc.metadata["content"] = doc.page_content
-            doc.metadata["page_number"] = int(doc.metadata["page_number"])
+            doc.metadata["page_number"] = int(doc.metadata["page_number"]) + 1
             # doc.page_content = f"""Doc {i+1} - {doc.metadata['short_name']}: {doc.page_content}"""
             results.append(doc)
 

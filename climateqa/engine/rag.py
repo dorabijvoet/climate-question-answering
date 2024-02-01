@@ -7,7 +7,7 @@ from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.base import format_document
 
 from climateqa.engine.reformulation import make_reformulation_chain
-from climateqa.engine.prompts import answer_prompt_template,answer_prompt_without_docs_template
+from climateqa.engine.prompts import answer_prompt_template,answer_prompt_without_docs_template,answer_prompt_images_template
 from climateqa.engine.utils import pass_values, flatten_dict
 
 
@@ -16,8 +16,24 @@ DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}"
 def _combine_documents(
     docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, sep="\n\n"
 ):
-    doc_strings = [f"Doc {i+1}: " + format_document(doc, document_prompt) for i,doc in enumerate(docs)]
+
+    doc_strings =  []
+
+    for i,doc in enumerate(docs):
+        # chunk_type = "Doc" if doc.metadata["chunk_type"] == "text" else "Image"
+        chunk_type = "Doc"
+        doc_string = f"{chunk_type} {i+1}: " + format_document(doc, document_prompt)
+        doc_string = doc_string.replace("\n"," ") 
+        doc_strings.append(doc_string)
+
     return sep.join(doc_strings)
+
+
+def get_text_docs(x):
+    return [doc for doc in x if doc.metadata["chunk_type"] == "text"]
+
+def get_image_docs(x):
+    return [doc for doc in x if doc.metadata["chunk_type"] == "image"]
 
 
 def make_rag_chain(retriever,llm):
@@ -51,22 +67,29 @@ def make_rag_chain(retriever,llm):
         **pass_values(["question","audience","language"])
     }
 
-    # Generate the answer
-
+    # ------- CHAIN 3
+    # Bot answer
 
 
     answer_with_docs = {
         "answer": input_documents | prompt | llm | StrOutputParser(),
-        **pass_values(["question","audience","language","query","docs"])
+        **pass_values(["question","audience","language","query","docs"]),
     }
 
     answer_without_docs = {
         "answer":  prompt_without_docs | llm | StrOutputParser(),
-        **pass_values(["question","audience","language","query","docs"])
+        **pass_values(["question","audience","language","query","docs"]),
     }
 
+    # def has_images(x):
+    #     image_docs = [doc for doc in x["docs"] if doc.metadata["chunk_type"]=="image"]
+    #     return len(image_docs) > 0
+    
+    def has_docs(x):
+        return len(x["docs"]) > 0
+
     answer = RunnableBranch(
-        (lambda x: len(x["docs"]) > 0, answer_with_docs),
+        (lambda x: has_docs(x), answer_with_docs),
         answer_without_docs,
     )
 
@@ -77,3 +100,16 @@ def make_rag_chain(retriever,llm):
 
     return rag_chain
 
+
+
+def make_illustration_chain(llm):
+
+    prompt_with_images = ChatPromptTemplate.from_template(answer_prompt_images_template)
+
+    input_description_images = {
+        "images":lambda x : _combine_documents(get_image_docs(x["docs"])),
+        **pass_values(["question","audience","language","answer"]),
+    }
+
+    illustration_chain = input_description_images | prompt_with_images | llm | StrOutputParser()
+    return illustration_chain

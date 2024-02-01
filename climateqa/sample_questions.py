@@ -73,6 +73,12 @@ QUESTIONS = {
         "What are the impacts of invasive alien species on Indigenous Peoples and local communities?",
         "What technologies and tools are available for managing invasive alien species?",
         "How do economic and land-use changes facilitate the introduction and spread of invasive alien species?"
+    ],
+    "Experimental images":[
+        "Is warming unprecedented in the past 200 years ?",
+        "Are human activities causing global warming?",
+        "What is the distribution of uncertainty in projected precipitation changes across different time frames ?",
+        "What are the anticipated changes in the global water cycle by the end of the 21st century under an intermediate emissions scenario ?",
     ]
 
 }

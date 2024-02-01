@@ -9,6 +9,10 @@ import os
 import time
 import re
 import json
+
+from io import BytesIO
+import base64
+
 from datetime import datetime
 from azure.storage.fileshare import ShareServiceClient
 
@@ -63,8 +67,6 @@ account_url = os.environ["BLOB_ACCOUNT_URL"]
 file_share_name = "climateqa"
 service = ShareServiceClient(account_url=account_url, credential=credential)
 share_client = service.get_share_client(file_share_name)
-
-print("YO",account_url,credential)
 
 user_id = create_user_id()
 
@@ -145,18 +147,12 @@ async def chat(query,history,audience,sources,reports):
         reports = []
 
 
-    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,reports = reports,k_summary = 3,k_total = 10,threshold=0.5)
+    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,min_size = 200,reports = reports,k_summary = 3,k_total = 15,threshold=0.5)
     rag_chain = make_rag_chain(retriever,llm)
 
-    source_string = ""
-
-
     # gradio_format = make_pairs([a.content for a in history]) + [(query, "")]
-
     # history = history + [(query,"")]
-
     # print(history)
-
     # print(gradio_format)
 
     # # reset memory
@@ -227,7 +223,7 @@ async def chat(query,history,audience,sources,reports):
                     output_language = op['value']["language"] # str
                     output_query = op["value"]["question"]
                 except Exception as e:
-                    raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
+                    raise gr.Error(f"ClimateQ&A Error: {e} - The error has been noted, try another question and if the error remains, you can contact us :)")
             
             elif op['path'] == retriever_path_id: # documents
                 try:
@@ -267,8 +263,7 @@ async def chat(query,history,audience,sources,reports):
             yield history,docs_html,output_query,output_language,gallery
 
     except Exception as e:
-        print(f"Error in fallback iterator: {e}")
-        raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
+        raise gr.Error(f"ClimateQ&A Error: {e}</br>The error has been noted, try another question and if the error remains, you can contact us :)")
 
 
     try:
@@ -282,6 +277,7 @@ async def chat(query,history,audience,sources,reports):
                 "prompt": prompt,
                 "query": prompt,
                 "question":output_query,
+                "sources":sources,
                 "docs":serialize_docs(docs),
                 "answer": history[-1][1],
                 "time": timestamp,
@@ -289,8 +285,43 @@ async def chat(query,history,audience,sources,reports):
             log_on_azure(file, logs, share_client)
     except Exception as e:
         print(f"Error logging on Azure Blob Storage: {e}")
-        raise gr.Error(f"ClimateQ&A Error: {str(e)[:100]}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
+        raise gr.Error(f"ClimateQ&A Error: {str(e)[:100]}</br>The error has been noted, try another question and if the error remains, you can contact us :)")
 
+    image_dict = {}
+    for i,doc in enumerate(docs):
+        
+        if doc.metadata["chunk_type"] == "image":
+            try:
+                key = f"Image {i}"
+                image_path = doc.metadata["image_path"].split("documents/")[1]
+                img = get_image_from_azure_blob_storage(image_path)
+
+                # Convert the image to a byte buffer
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                img_str = base64.b64encode(buffered.getvalue()).decode()
+
+                # Embedding the base64 string in Markdown
+                markdown_image = f"![Alt text](data:image/png;base64,{img_str})"
+                image_dict[key] = {"img":img,"md":markdown_image,"caption":doc.page_content,"key":key,"figure_code":doc.metadata["figure_code"]}
+            except Exception as e:
+                print(f"Skipped adding image {i} because of {e}")
+
+    if len(image_dict) > 0:
+
+        gallery = [x["img"] for x in list(image_dict.values())]
+        img = list(image_dict.values())[0]
+        img_md = img["md"]
+        img_caption = img["caption"]
+        img_code = img["figure_code"]
+        if img_code != "N/A":
+            img_name = f"{img['key']} - {img['figure_code']}"
+        else:
+            img_name = f"{img['key']}"
+
+        answer_yet = history[-1][1] + f"\n\n{img_md}\n<p class='chatbot-caption'><b>{img_name}</b> - {img_caption}</p>"
+        history[-1] = (history[-1][0],answer_yet)
+        history = [tuple(x) for x in history]
 
     # gallery = [x.metadata["image_path"] for x in docs if (len(x.metadata["image_path"]) > 0 and "IAS" in x.metadata["image_path"])]
     # if len(gallery) > 0:
@@ -334,21 +365,66 @@ def make_html_source(source,i):
     meta = source.metadata
     # content = source.page_content.split(":",1)[1].strip()
     content = source.page_content.strip()
-    return f"""
-<div class="card">
-    <div class="card-content">
-        <h2>Doc {i} - {meta['short_name']} - Page {int(meta['page_number'])}</h2>
-        <p>{content}</p>
-    </div>
-    <div class="card-footer">
-        <span>{meta['name']}</span>
-        <a href="{meta['url']}#page={int(meta['page_number'])}" target="_blank" class="pdf-link">
-            <span role="img" aria-label="Open PDF">🔗</span>
-        </a>
-    </div>
-</div>
-"""
 
+    toc_levels = []
+    for j in range(2):
+        level = meta[f"toc_level{j}"]
+        if level != "N/A":
+            toc_levels.append(level)
+        else:
+            break
+    toc_levels = " > ".join(toc_levels)
+    print(toc_levels)
+
+    if len(toc_levels) > 0:
+        name = f"<b>{toc_levels}</b><br/>{meta['name']}"
+    else:
+        name = meta['name']
+
+    print(name)
+
+
+    if meta["chunk_type"] == "text":
+
+        card = f"""
+    <div class="card">
+        <div class="card-content">
+            <h2>Doc {i} - {meta['short_name']} - Page {int(meta['page_number'])}</h2>
+            <p>{content}</p>
+        </div>
+        <div class="card-footer">
+            <span>{name}</span>
+            <a href="{meta['url']}#page={int(meta['page_number'])}" target="_blank" class="pdf-link">
+                <span role="img" aria-label="Open PDF">🔗</span>
+            </a>
+        </div>
+    </div>
+    """
+    
+    else:
+
+        if meta["figure_code"] != "N/A":
+            title = f"{meta['figure_code']} - {meta['short_name']}"
+        else:
+            title = f"{meta['short_name']}"
+
+        card = f"""
+    <div class="card card-image">
+        <div class="card-content">
+            <h2>Image {i} - {title} - Page {int(meta['page_number'])}</h2>
+            <p>{content}</p>
+            <p class='ai-generated'>AI-generated description</p>
+        </div>
+        <div class="card-footer">
+            <span>{name}</span>
+            <a href="{meta['url']}#page={int(meta['page_number'])}" target="_blank" class="pdf-link">
+                <span role="img" aria-label="Open PDF">🔗</span>
+            </a>
+        </div>
+    </div>
+    """
+        
+    return card
 
 
 
@@ -501,71 +577,6 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
-                    with gr.Tab("Figures",elem_id = "tab-images",id = 3):
-                        gallery = gr.Gallery()
-
-
-                def start_chat(query,history):
-                    history = history + [(query,"")]
-                    history = [tuple(x) for x in history]
-                    print(history)
-                    return (gr.update(interactive = False),gr.update(selected=1),history)
-                
-                def finish_chat():
-                    return (gr.update(interactive = True,value = ""))
-
-                (textbox
-                    .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
-                    .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_textbox")
-                    .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
-                )
-
-                (examples_hidden
-                    .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
-                    .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery],concurrency_limit = 8,api_name = "chat_examples")
-                    .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
-                )
-
-
-                def change_sample_questions(key):
-                    index = list(QUESTIONS.keys()).index(key)
-                    visible_bools = [False] * len(samples)
-                    visible_bools[index] = True
-                    return [gr.update(visible=visible_bools[i]) for i in range(len(samples))]
-
-
-
-                dropdown_samples.change(change_sample_questions,dropdown_samples,samples)
-
-                # # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
-                # (textbox
-                #     .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                #     .success(change_tab,None,tabs)
-                #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-                #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
-                #     .success(lambda x : textbox,[textbox],[textbox])
-                # )
-
-                # (examples_hidden
-                #     .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-                #     .success(change_tab,None,tabs)
-                #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-                #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
-                #     .success(lambda x : textbox,[textbox],[textbox])
-                # )
-                # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
-                #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
-                #     )
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -574,6 +585,9 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 # OTHER TABS
 #---------------------------------------------------------------------------------------
 
+
+    with gr.Tab("Figures",elem_id = "tab-images",elem_classes = "max-height other-tabs"):
+        gallery_component = gr.Gallery()
 
     with gr.Tab("About ClimateQ&A",elem_classes = "max-height other-tabs"):
         with gr.Row():
@@ -757,6 +771,62 @@ Or around 2 to 4 times more than a typical Google search.
 - Add follow-up questions https://climateqa.com
 """
     )
+
+
+
+
+    def start_chat(query,history):
+        history = history + [(query,"")]
+        history = [tuple(x) for x in history]
+        print(history)
+        return (gr.update(interactive = False),gr.update(selected=1),history)
+    
+    def finish_chat():
+        return (gr.update(interactive = True,value = ""))
+
+    (textbox
+        .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
+        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_textbox")
+        .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
+    )
+
+    (examples_hidden
+        .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
+        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_examples")
+        .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
+    )
+
+
+    def change_sample_questions(key):
+        index = list(QUESTIONS.keys()).index(key)
+        visible_bools = [False] * len(samples)
+        visible_bools[index] = True
+        return [gr.update(visible=visible_bools[i]) for i in range(len(samples))]
+
+
+
+    dropdown_samples.change(change_sample_questions,dropdown_samples,samples)
+
+    # # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
+    # (textbox
+    #     .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+    #     .success(change_tab,None,tabs)
+    #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+    #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
+    #     .success(lambda x : textbox,[textbox],[textbox])
+    # )
+
+    # (examples_hidden
+    #     .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
+    #     .success(change_tab,None,tabs)
+    #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
+    #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
+    #     .success(lambda x : textbox,[textbox],[textbox])
+    # )
+    # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
+    #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
+    #     )
+
 
     demo.queue()
 

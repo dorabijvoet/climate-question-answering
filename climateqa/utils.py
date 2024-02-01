@@ -15,7 +15,7 @@ def get_file_from_azure_blob_storage(path):
 
 
 def get_image_from_azure_blob_storage(path):
-    base_path = "search_demo/climateq&a/processed_image/"
+    base_path = "climateqa/documents/"
     path = os.path.join(base_path, path)
     file_object = get_file_from_azure_blob_storage(path)
     image = Image.open(file_object)
