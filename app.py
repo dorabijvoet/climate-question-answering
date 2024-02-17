@@ -146,88 +146,38 @@ async def chat(query,history,audience,sources,reports):
     if len(reports) == 0:
         reports = []
 
-
     retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,min_size = 200,reports = reports,k_summary = 3,k_total = 15,threshold=0.5)
     rag_chain = make_rag_chain(retriever,llm)
-
-    # gradio_format = make_pairs([a.content for a in history]) + [(query, "")]
-    # history = history + [(query,"")]
-    # print(history)
-    # print(gradio_format)
-
-    # # reset memory
-    # memory.clear()
-    # for message in history:
-    #     memory.chat_memory.add_message(message)
     
     inputs = {"query": query,"audience": audience_prompt}
     result = rag_chain.astream_log(inputs) #{"callbacks":[MyCustomAsyncHandler()]})
     # result = rag_chain.stream(inputs)
 
-    reformulated_question_path_id = "/logs/flatten_dict/final_output"
-    retriever_path_id = "/logs/Retriever/final_output"
-    streaming_output_path_id = "/logs/AzureChatOpenAI:2/streamed_output_str/-"
-    final_output_path_id = "/streamed_output/-"
+    path_reformulation = "/logs/reformulation/final_output"
+    path_retriever = "/logs/find_documents/final_output"
+    path_answer = "/logs/answer/streamed_output_str/-"
 
     docs_html = ""
     output_query = ""
     output_language = ""
     gallery = []
 
-    # for output in result:
-
-    #     if "language" in output:
-    #         output_language = output["language"]
-    #     if "question" in output:
-    #         output_query = output["question"]
-    #     if "docs" in output:
-
-    #         try:
-    #             docs = output['docs'] # List[Document]
-    #             docs_html = []
-    #             for i, d in enumerate(docs, 1):
-    #                 docs_html.append(make_html_source(d, i))
-    #             docs_html = "".join(docs_html)
-    #         except TypeError:
-    #             print("No documents found")
-    #             continue
-
-    #     if "answer" in output:
-    #         new_token = output["answer"] # str
-    #         time.sleep(0.03)
-    #         answer_yet = history[-1][1] + new_token
-    #         answer_yet = parse_output_llm_with_sources(answer_yet)
-    #         history[-1] = (query,answer_yet)
-
-    #     yield history,docs_html,output_query,output_language,gallery
-
-
-
-    # async def fallback_iterator(iterable):
-    #     async for item in iterable:
-    #         try:
-    #             yield item
-    #         except Exception as e:
-    #             print(f"Error in fallback iterator: {e}")
-    #             raise gr.Error(f"ClimateQ&A Error: {e}\nThe error has been noted, try another question and if the error remains, you can contact us :)")
-
     try:
         async for op in result:
-
 
             op = op.ops[0]
             # print("ITERATION",op)
 
-            if op['path'] == reformulated_question_path_id: # reforulated question
+            if op['path'] == path_reformulation: # reforulated question
                 try:
                     output_language = op['value']["language"] # str
                     output_query = op["value"]["question"]
                 except Exception as e:
                     raise gr.Error(f"ClimateQ&A Error: {e} - The error has been noted, try another question and if the error remains, you can contact us :)")
             
-            elif op['path'] == retriever_path_id: # documents
+            elif op['path'] == path_retriever: # documents
                 try:
-                    docs = op['value']['documents'] # List[Document]
+                    docs = op['value']['docs'] # List[Document]
                     docs_html = []
                     for i, d in enumerate(docs, 1):
                         docs_html.append(make_html_source(d, i))
@@ -237,7 +187,7 @@ async def chat(query,history,audience,sources,reports):
                     print("op: ",op)
                     continue
 
-            elif op['path'] == streaming_output_path_id: # final answer
+            elif op['path'] == path_answer: # final answer
                 new_token = op['value'] # str
                 time.sleep(0.01)
                 answer_yet = history[-1][1] + new_token

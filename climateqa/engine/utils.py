@@ -1,10 +1,29 @@
-
-from typing import Any, Dict, Iterable, Tuple, Union
 from operator import itemgetter
+from typing import Any, Dict, Iterable, Tuple
+from langchain_core.runnables import RunnablePassthrough
+
 
 def pass_values(x):
-    if not isinstance(x,list): x = [x]
-    return {k:itemgetter(k) for k in x}
+    if not isinstance(x, list):
+        x = [x]
+    return {k: itemgetter(k) for k in x}
+
+
+def prepare_chain(chain,name):
+    chain = propagate_inputs(chain)
+    chain = rename_chain(chain,name)
+    return chain
+
+
+def propagate_inputs(chain):
+    chain_with_values = {
+        "outputs": chain,
+        "inputs": RunnablePassthrough()
+    } | RunnablePassthrough() | flatten_dict
+    return chain_with_values
+
+def rename_chain(chain,name):
+    return chain.with_config({"run_name":name})
 
 
 # Drawn from langchain utils and modified to remove the parent key
@@ -48,5 +67,3 @@ def flatten_dict(
     """
     flat_dict = {k: v for k, v in _flatten_dict(nested_dict, parent_key, sep)}
     return flat_dict
-
-

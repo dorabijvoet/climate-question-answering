@@ -8,8 +8,7 @@ from langchain_core.prompts.base import format_document
 
 from climateqa.engine.reformulation import make_reformulation_chain
 from climateqa.engine.prompts import answer_prompt_template,answer_prompt_without_docs_template,answer_prompt_images_template
-from climateqa.engine.utils import pass_values, flatten_dict
-
+from climateqa.engine.utils import pass_values, flatten_dict,prepare_chain,rename_chain
 
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
 
@@ -44,21 +43,13 @@ def make_rag_chain(retriever,llm):
     prompt_without_docs = ChatPromptTemplate.from_template(answer_prompt_without_docs_template)
 
     # ------- CHAIN 0 - Reformulation
-    reformulation_chain = make_reformulation_chain(llm)
-    reformulation = (
-        {"reformulation":reformulation_chain,**pass_values(["audience","query"])}
-        | RunnablePassthrough()
-        | flatten_dict
-    )
-
+    reformulation = make_reformulation_chain(llm)
+    reformulation = prepare_chain(reformulation,"reformulation")
 
     # ------- CHAIN 1
     # Retrieved documents
-    find_documents =  {
-        "docs": itemgetter("question") | retriever,
-        **pass_values(["question","audience","language","query"])
-    } | RunnablePassthrough()
-
+    find_documents = {"docs": itemgetter("question") | retriever} | RunnablePassthrough()
+    find_documents = prepare_chain(find_documents,"find_documents")
 
     # ------- CHAIN 2
     # Construct inputs for the llm
@@ -69,15 +60,15 @@ def make_rag_chain(retriever,llm):
 
     # ------- CHAIN 3
     # Bot answer
-
+    llm_final = rename_chain(llm,"answer")
 
     answer_with_docs = {
-        "answer": input_documents | prompt | llm | StrOutputParser(),
+        "answer": input_documents | prompt | llm_final | StrOutputParser(),
         **pass_values(["question","audience","language","query","docs"]),
     }
 
     answer_without_docs = {
-        "answer":  prompt_without_docs | llm | StrOutputParser(),
+        "answer":  prompt_without_docs | llm_final | StrOutputParser(),
         **pass_values(["question","audience","language","query","docs"]),
     }
 
