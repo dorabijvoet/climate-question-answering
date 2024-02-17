@@ -90,7 +90,7 @@ def parse_output_llm_with_sources(output):
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
-llm = get_llm(max_tokens = 1024,temperature = 0.0)
+llm = get_llm(provider="openai",max_tokens = 1024,temperature = 0.0)
 
 
 def make_pairs(lst):
