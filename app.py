@@ -82,7 +82,7 @@ def parse_output_llm_with_sources(output):
         if part.startswith("Doc"):
             subparts = part.split(",")
             subparts = [subpart.lower().replace("doc","").strip() for subpart in subparts]
-            subparts = [f"<span class='doc-ref'><sup>{subpart}</sup></span>" for subpart in subparts]
+            subparts = [f"""<a href="#doc{subpart}" class="a-doc-ref" target="_self"><span class='doc-ref'><sup>{subpart}</sup></span></a>""" for subpart in subparts]
             parts.append("".join(subparts))
         else:
             parts.append(part)
@@ -322,7 +322,7 @@ def make_html_source(source,i):
     if meta["chunk_type"] == "text":
 
         card = f"""
-    <div class="card">
+    <div class="card" id="doc{i}">
         <div class="card-content">
             <h2>Doc {i} - {meta['short_name']} - Page {int(meta['page_number'])}</h2>
             <p>{content}</p>
