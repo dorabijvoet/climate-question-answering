@@ -13,7 +13,7 @@ from pydantic import Field
 
 class ClimateQARetriever(BaseRetriever):
     vectorstore:VectorStore
-    sources:list = ["IPCC","IPBES"]
+    sources:list = ["IPCC","IPBES","IPOS"]
     reports:list = []
     threshold:float = 0.6
     k_summary:int = 3
@@ -28,7 +28,7 @@ class ClimateQARetriever(BaseRetriever):
 
         # Check if all elements in the list are either IPCC or IPBES
         assert isinstance(self.sources,list)
-        assert all([x in ["IPCC","IPBES"] for x in self.sources])
+        assert all([x in ["IPCC","IPBES","IPOS"] for x in self.sources])
         assert self.k_total > self.k_summary, "k_total should be greater than k_summary"
 
         # Prepare base search kwargs
@@ -60,7 +60,8 @@ class ClimateQARetriever(BaseRetriever):
         docs = docs_summaries + docs_full
 
         # Filter if scores are below threshold
-        # docs = [x for x in docs if x[1] > self.threshold and len(x[0].page_content) > self.min_size]
+        docs = [x for x in docs if len(x[0].page_content) > self.min_size]
+        # docs = [x for x in docs if x[1] > self.threshold]
 
         # Add score to metadata
         results = []

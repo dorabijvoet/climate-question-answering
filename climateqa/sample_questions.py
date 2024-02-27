@@ -80,6 +80,25 @@ QUESTIONS = {
         "What is the distribution of uncertainty in projected precipitation changes across different time frames ?",
         "What are the anticipated changes in the global water cycle by the end of the 21st century under an intermediate emissions scenario ?",
         "How are human activities contributing to the spread of invasive alien species?",
+    ],
+    "Deep Sea Mining":[
+        "What is the motivation behind mining the deep seabed?",
+        "What are the arguments in favor of and against deep-sea mining?",
+        "Can the global demand for metals and resources be met adequately through land-based sources for the next few decades?",
+        "Is it essential for humanity to exploit the deep ocean for minerals, or should we consider alternative pathways?",
+        "What are the environmental impacts of deep-sea mining in order of significance, indicating the degree or severity of the impacts?",
+        "What specific substances are likely to be released as contaminants through deep-sea mining?",
+        "How might the substances released through deep-sea mining pose a threat to marine life?",
+        "What are the various environmental stressors associated with deep-sea mining, including factors like noise, vibration, and light?",
+        "How would environmental stressors associated with deep-sea mining affect marine ecosystems?",
+        "How will the removal of mineral resources as a result of deep-sea mining impact the living components of the ecosystem?",
+        "How will deep-sea mining influence ocean currents, large-scale circulation, and biogeochemical cycles?",
+        "What are the potential ramifications of deep-sea mining for global ocean processes?",
+        "What are the potential repercussions of deep-sea mining on climate regulation, considering the role of deep-sea ecosystems in climate dynamics?",
+        "How resilient are the targeted habitats of deep-sea ecosystems (nodules, sulfides, crusts) to the impacts of deep-sea mining?",
+        "Apart from the ecological consequences of deep-sea mining, what economic challenges could a state encounter if a deep-seabed mining operation leads to financial losses or third-party liability?",
+        "What legal steps would need to be designed to authorize deep-sea mining?",
+        "Is the current technological infrastructure sufficiently advanced and tested to support the implementation of deep-sea mining operations effectively?",
+        "Provide me with a list of organizations most actively opposing deep-sea mining."
     ]
-
 }

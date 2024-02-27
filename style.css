@@ -320,3 +320,42 @@ span.chatbot > p > img{
 .card-image > .card-content{
     background-color:#f1f7fa !important;
 }
+
+
+
+.tab-nav > button.selected{
+    color:#4b8ec3;
+    font-weight:bold;
+    border:none;
+}
+
+.tab-nav{
+    border:none !important;
+}
+
+#input-textbox > label > textarea{
+    border-radius:40px;
+    padding-left:30px;
+    resize:none;
+}
+
+#input-message > div{
+    border:none;
+}
+
+#dropdown-samples{
+  /*! border:none !important; */
+  /*! border-width:0px !important; */
+  background:none !important;
+  
+}
+
+#dropdown-samples > .container > .wrap{
+  background-color:white;
+}
+
+
+#tab-examples > div > .form{
+  border:none;
+  background:none !important;
+}
