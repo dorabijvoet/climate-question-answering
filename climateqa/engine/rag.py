@@ -8,7 +8,9 @@ from langchain_core.prompts.base import format_document
 
 from climateqa.engine.reformulation import make_reformulation_chain
 from climateqa.engine.prompts import answer_prompt_template,answer_prompt_without_docs_template,answer_prompt_images_template
+from climateqa.engine.prompts import papers_prompt_template
 from climateqa.engine.utils import pass_values, flatten_dict,prepare_chain,rename_chain
+from climateqa.engine.keywords import make_keywords_chain
 
 DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
 
@@ -21,7 +23,11 @@ def _combine_documents(
     for i,doc in enumerate(docs):
         # chunk_type = "Doc" if doc.metadata["chunk_type"] == "text" else "Image"
         chunk_type = "Doc"
-        doc_string = f"{chunk_type} {i+1}: " + format_document(doc, document_prompt)
+        if isinstance(doc,str):
+            doc_formatted = doc
+        else:
+            doc_formatted = format_document(doc, document_prompt)
+        doc_string = f"{chunk_type} {i+1}: " + doc_formatted
         doc_string = doc_string.replace("\n"," ") 
         doc_strings.append(doc_string)
 
@@ -37,7 +43,6 @@ def get_image_docs(x):
 
 def make_rag_chain(retriever,llm):
 
-
     # Construct the prompt
     prompt = ChatPromptTemplate.from_template(answer_prompt_template)
     prompt_without_docs = ChatPromptTemplate.from_template(answer_prompt_without_docs_template)
@@ -45,6 +50,11 @@ def make_rag_chain(retriever,llm):
     # ------- CHAIN 0 - Reformulation
     reformulation = make_reformulation_chain(llm)
     reformulation = prepare_chain(reformulation,"reformulation")
+
+    # ------- Find all keywords from the reformulated query
+    keywords = make_keywords_chain(llm)
+    keywords = {"keywords":itemgetter("question") | keywords}
+    keywords = prepare_chain(keywords,"keywords")
 
     # ------- CHAIN 1
     # Retrieved documents
@@ -55,7 +65,7 @@ def make_rag_chain(retriever,llm):
     # Construct inputs for the llm
     input_documents = {
         "context":lambda x : _combine_documents(x["docs"]),
-        **pass_values(["question","audience","language"])
+        **pass_values(["question","audience","language","keywords"])
     }
 
     # ------- CHAIN 3
@@ -64,12 +74,12 @@ def make_rag_chain(retriever,llm):
 
     answer_with_docs = {
         "answer": input_documents | prompt | llm_final | StrOutputParser(),
-        **pass_values(["question","audience","language","query","docs"]),
+        **pass_values(["question","audience","language","query","docs","keywords"]),
     }
 
     answer_without_docs = {
         "answer":  prompt_without_docs | llm_final | StrOutputParser(),
-        **pass_values(["question","audience","language","query","docs"]),
+        **pass_values(["question","audience","language","query","docs","keywords"]),
     }
 
     # def has_images(x):
@@ -87,9 +97,27 @@ def make_rag_chain(retriever,llm):
 
     # ------- FINAL CHAIN
     # Build the final chain
-    rag_chain = reformulation | find_documents | answer
+    rag_chain = reformulation | keywords | find_documents | answer
 
     return rag_chain
+
+
+def make_rag_papers_chain(llm):
+
+    prompt = ChatPromptTemplate.from_template(papers_prompt_template)
+
+    input_documents = {
+        "context":lambda x : _combine_documents(x["docs"]),
+        **pass_values(["question","language"])
+    }
+
+    chain = input_documents | prompt | llm | StrOutputParser()
+    chain = rename_chain(chain,"answer")
+
+    return chain
+
+
+
 
 
 

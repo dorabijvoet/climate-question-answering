@@ -1,6 +1,11 @@
 from climateqa.engine.embeddings import get_embeddings_function
 embeddings_function = get_embeddings_function()
 
+from climateqa.papers.openalex import OpenAlex
+from sentence_transformers import CrossEncoder
+
+reranker = CrossEncoder("mixedbread-ai/mxbai-rerank-xsmall-v1")
+oa = OpenAlex()
 
 import gradio as gr
 import pandas as pd
@@ -32,6 +37,8 @@ from climateqa.engine.prompts import audience_prompts
 from climateqa.sample_questions import QUESTIONS
 from climateqa.constants import POSSIBLE_REPORTS
 from climateqa.utils import get_image_from_azure_blob_storage
+from climateqa.engine.keywords import make_keywords_chain
+from climateqa.engine.rag import make_rag_papers_chain
 
 # Load environment variables in local mode
 try:
@@ -141,19 +148,20 @@ async def chat(query,history,audience,sources,reports):
     # result = rag_chain.stream(inputs)
 
     path_reformulation = "/logs/reformulation/final_output"
+    path_keywords = "/logs/keywords/final_output"
     path_retriever = "/logs/find_documents/final_output"
     path_answer = "/logs/answer/streamed_output_str/-"
 
     docs_html = ""
     output_query = ""
     output_language = ""
+    output_keywords = ""
     gallery = []
 
     try:
         async for op in result:
 
             op = op.ops[0]
-            # print("ITERATION",op)
 
             if op['path'] == path_reformulation: # reforulated question
                 try:
@@ -162,6 +170,14 @@ async def chat(query,history,audience,sources,reports):
                 except Exception as e:
                     raise gr.Error(f"ClimateQ&A Error: {e} - The error has been noted, try another question and if the error remains, you can contact us :)")
             
+            if op["path"] == path_keywords:
+                try:
+                    output_keywords = op['value']["keywords"] # str
+                    output_keywords = " AND ".join(output_keywords)
+                except Exception as e:
+                    pass
+            
+
             elif op['path'] == path_retriever: # documents
                 try:
                     docs = op['value']['docs'] # List[Document]
@@ -183,23 +199,13 @@ async def chat(query,history,audience,sources,reports):
                 answer_yet = parse_output_llm_with_sources(answer_yet)
                 history[-1] = (query,answer_yet)
 
-        
-            # elif op['path'] == final_output_path_id:
-            #     final_output = op['value']
 
-            #     if "answer" in final_output:
-                
-            #         final_output = final_output["answer"]
-            #         print(final_output)
-            #         answer = history[-1][1] + final_output
-            #         answer = parse_output_llm_with_sources(answer)
-            #         history[-1] = (query,answer)
 
             else:
                 continue
 
             history = [tuple(x) for x in history]
-            yield history,docs_html,output_query,output_language,gallery
+            yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords
 
     except Exception as e:
         raise gr.Error(f"{e}")
@@ -267,37 +273,7 @@ async def chat(query,history,audience,sources,reports):
     #     gallery = list(set("|".join(gallery).split("|")))
     #     gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
-    yield history,docs_html,output_query,output_language,gallery
-
-
-    # memory.save_context(inputs, {"answer": gradio_format[-1][1]})
-    # yield gradio_format, memory.load_memory_variables({})["history"], source_string
-    
-# async def chat_with_timeout(query, history, audience, sources, reports, timeout_seconds=2):
-#     async def timeout_gen(async_gen, timeout):
-#         try:
-#             while True:
-#                 try:
-#                     yield await asyncio.wait_for(async_gen.__anext__(), timeout)
-#                 except StopAsyncIteration:
-#                     break
-#         except asyncio.TimeoutError:
-#             raise gr.Error("Operation timed out. Please try again.")
-
-#     return timeout_gen(chat(query, history, audience, sources, reports), timeout_seconds)
-
-
-
-# # A wrapper function that includes a timeout
-# async def chat_with_timeout(query, history, audience, sources, reports, timeout_seconds=2):
-#     try:
-#         # Use asyncio.wait_for to apply a timeout to the chat function
-#         return await asyncio.wait_for(chat(query, history, audience, sources, reports), timeout_seconds)
-#     except asyncio.TimeoutError:
-#         # Handle the timeout error as desired
-#         raise gr.Error("Operation timed out. Please try again.")
-
-
+    yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords
 
 
 def make_html_source(source,i):
@@ -392,6 +368,79 @@ def log_on_azure(file, logs, share_client):
     file_client.upload_file(logs)
 
 
+def generate_keywords(query):
+    chain = make_keywords_chain(llm)
+    keywords = chain.invoke(query)
+    keywords = " AND ".join(keywords["keywords"])
+    return keywords
+
+
+
+papers_cols_widths = {
+    "doc":50,
+    "id":100,
+    "title":300,
+    "doi":100,
+    "publication_year":100,
+    "abstract":500,
+    "rerank_score":100,
+    "is_oa":50,
+}
+
+papers_cols = list(papers_cols_widths.keys())
+papers_cols_widths = list(papers_cols_widths.values())
+
+async def find_papers(query, keywords,after):
+
+    summary = ""
+    
+    df_works = oa.search(keywords,after = after)
+    df_works = df_works.dropna(subset=["abstract"])
+    df_works = oa.rerank(query,df_works,reranker)
+    df_works = df_works.sort_values("rerank_score",ascending=False)
+    G = oa.make_network(df_works)
+
+    height = "750px"
+    network = oa.show_network(G,color_by = "rerank_score",notebook=False,height = height)
+    network_html = network.generate_html()
+
+    network_html = network_html.replace("'", "\"")
+    css_to_inject = "<style>#mynetwork { border: none !important; } .card { border: none !important; }</style>"
+    network_html = network_html + css_to_inject
+
+    
+    network_html = f"""<iframe style="width: 100%; height: {height};margin:0 auto" name="result" allow="midi; geolocation; microphone; camera; 
+    display-capture; encrypted-media;" sandbox="allow-modals allow-forms 
+    allow-scripts allow-same-origin allow-popups 
+    allow-top-navigation-by-user-activation allow-downloads" allowfullscreen="" 
+    allowpaymentrequest="" frameborder="0" srcdoc='{network_html}'></iframe>"""
+
+
+    docs = df_works["content"].head(15).tolist()
+
+    df_works = df_works.reset_index(drop = True).reset_index().rename(columns = {"index":"doc"})
+    df_works["doc"] = df_works["doc"] + 1
+    df_works = df_works[papers_cols]
+
+    yield df_works,network_html,summary
+
+    chain = make_rag_papers_chain(llm)
+    result = chain.astream_log({"question": query,"docs": docs,"language":"English"})
+    path_answer = "/logs/StrOutputParser/streamed_output/-"
+
+    async for op in result:
+
+        op = op.ops[0]
+
+        if op['path'] == path_answer: # reforulated question
+            new_token = op['value'] # str
+            summary += new_token
+        else:
+            continue
+        yield df_works,network_html,summary
+    
+
+
 # --------------------------------------------------------------------
 # Gradio
 # --------------------------------------------------------------------
@@ -474,7 +523,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                             samples.append(group_examples)
 
 
-                    with gr.Tab("Citations",elem_id = "tab-citations",id = 1):
+                    with gr.Tab("Sources",elem_id = "tab-citations",id = 1):
                         sources_textbox = gr.HTML(show_label=False, elem_id="sources-textbox")
                         docs_textbox = gr.State("")
 
@@ -513,6 +562,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
 
 
+
 #---------------------------------------------------------------------------------------
 # OTHER TABS
 #---------------------------------------------------------------------------------------
@@ -521,6 +571,28 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     with gr.Tab("Figures",elem_id = "tab-images",elem_classes = "max-height other-tabs"):
         gallery_component = gr.Gallery()
 
+    with gr.Tab("Papers (beta)",elem_id = "tab-papers",elem_classes = "max-height other-tabs"):
+
+        with gr.Row():
+            with gr.Column(scale=1):
+                query_papers = gr.Textbox(placeholder="Question",show_label=False,lines = 1,interactive = True,elem_id="query-papers")
+                keywords_papers = gr.Textbox(placeholder="Keywords",show_label=False,lines = 1,interactive = True,elem_id="keywords-papers")
+                after = gr.Slider(minimum=1950,maximum=2023,step=1,value=1960,label="Publication date",show_label=True,interactive=True,elem_id="date-papers")
+                search_papers = gr.Button("Search",elem_id="search-papers",interactive=True)
+
+            with gr.Column(scale=7):
+
+                with gr.Tab("Summary",elem_id="papers-summary-tab"):
+                    papers_summary = gr.Markdown(visible=True,elem_id="papers-summary")
+
+                with gr.Tab("Relevant papers",elem_id="papers-results-tab"):
+                    papers_dataframe = gr.Dataframe(visible=True,elem_id="papers-table",headers = papers_cols)
+
+                with gr.Tab("Citations network",elem_id="papers-network-tab"):
+                    citations_network = gr.HTML(visible=True,elem_id="papers-citations-network")
+
+
+            
     with gr.Tab("About",elem_classes = "max-height other-tabs"):
         with gr.Row():
             with gr.Column(scale=1):
@@ -537,13 +609,13 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
     (textbox
         .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
-        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_textbox")
+        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component,query_papers,keywords_papers],concurrency_limit = 8,api_name = "chat_textbox")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
     )
 
     (examples_hidden
         .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
-        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_examples")
+        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component,query_papers,keywords_papers],concurrency_limit = 8,api_name = "chat_examples")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
     )
 
@@ -557,6 +629,9 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
 
     dropdown_samples.change(change_sample_questions,dropdown_samples,samples)
+
+    query_papers.submit(generate_keywords,[query_papers], [keywords_papers])
+    search_papers.click(find_papers,[query_papers,keywords_papers,after], [papers_dataframe,citations_network,papers_summary])
 
     # # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
     # (textbox
