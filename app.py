@@ -29,16 +29,16 @@ from utils import create_user_id
 
 # ClimateQ&A imports
 from climateqa.engine.llm import get_llm
-from climateqa.engine.rag import make_rag_chain
+from climateqa.engine.chains.answer_rag import make_rag_chain
 from climateqa.engine.vectorstore import get_pinecone_vectorstore
 from climateqa.engine.retriever import ClimateQARetriever
 from climateqa.engine.embeddings import get_embeddings_function
-from climateqa.engine.prompts import audience_prompts
+from climateqa.engine.chains.prompts import audience_prompts
 from climateqa.sample_questions import QUESTIONS
 from climateqa.constants import POSSIBLE_REPORTS
 from climateqa.utils import get_image_from_azure_blob_storage
 from climateqa.engine.keywords import make_keywords_chain
-from climateqa.engine.rag import make_rag_papers_chain
+from climateqa.engine.chains.answer_rag import make_rag_papers_chain
 
 # Load environment variables in local mode
 try:

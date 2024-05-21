@@ -6,7 +6,7 @@ from langchain_core.runnables import RunnablePassthrough, RunnableLambda, Runnab
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.base import format_document
 
-from climateqa.engine.reformulation import make_reformulation_chain
+from climateqa.engine.chains.reformulation import make_reformulation_chain
 from climateqa.engine.prompts import answer_prompt_template,answer_prompt_without_docs_template,answer_prompt_images_template
 from climateqa.engine.prompts import papers_prompt_template
 from climateqa.engine.utils import pass_values, flatten_dict,prepare_chain,rename_chain
@@ -132,3 +132,13 @@ def make_illustration_chain(llm):
 
     illustration_chain = input_description_images | prompt_with_images | llm | StrOutputParser()
     return illustration_chain
+
+
+def make_answer_rag_node(llm):
+
+                    
+    def answer_rag(state):
+        answer = "\n".join([x["question"] for x in state["questions"]])
+        return {"answer":answer}
+    
+    return answer_rag

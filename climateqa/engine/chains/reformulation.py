@@ -3,7 +3,7 @@ from langchain.output_parsers.structured import StructuredOutputParser, Response
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda, RunnableBranch
 
-from climateqa.engine.prompts import reformulation_prompt_template
+from climateqa.engine.chains.prompts import reformulation_prompt_template
 from climateqa.engine.utils import pass_values, flatten_dict
 
 

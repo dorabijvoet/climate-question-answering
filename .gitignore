@@ -5,3 +5,6 @@ __pycache__/utils.cpython-38.pyc
 
 notebooks/
 *.pyc
+
+**/.ipynb_checkpoints/
+**/.flashrank_cache/
