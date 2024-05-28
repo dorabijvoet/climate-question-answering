@@ -87,7 +87,7 @@ user_id = create_user_id()
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
 llm = get_llm(provider="openai",max_tokens = 1024,temperature = 0.0)
-reranker = get_reranker("nano")
+reranker = get_reranker("large")
 agent = make_graph_agent(llm,vectorstore,reranker)
 
 
@@ -166,6 +166,13 @@ async def chat(query,history,audience,sources,reports):
                 except Exception as e:
                     print(f"Error getting documents: {e}")
                     print(event)
+
+            # elif event["name"] == "retrieve_documents" and event["event"] == "on_chain_start":
+            #     print(event)
+            #     questions = event["data"]["input"]["questions"]
+            #     questions = "\n".join([f"{i+1}. {q['question']} ({q['source']})" for i,q in enumerate(questions)])
+            #     answer_yet = "🔄️ Searching in the knowledge base\n{questions}"
+            #     history[-1] = (query,answer_yet)
 
 
             for event_name,(event_description,display_output) in steps_display.items():
