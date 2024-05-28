@@ -34,7 +34,7 @@ def rerank_docs(reranker,docs,query):
     for result in results.results:
         doc_id = result.document.doc_id
         doc = docs[doc_id]
-        doc.metadata["rerank_score"] = result.score
+        doc.metadata["reranking_score"] = result.score
         doc.metadata["query_used_for_retrieval"] = query
         docs_reranked.append(doc)
     return docs_reranked

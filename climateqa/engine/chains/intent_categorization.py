@@ -7,7 +7,7 @@ from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 
 
-class IntentRouter(BaseModel):
+class IntentCategorizer(BaseModel):
     """Analyzing the user message input"""
     
     language: str = Field(
@@ -37,31 +37,31 @@ class IntentRouter(BaseModel):
 
 
 
-def make_intent_router_chain(llm):
+def make_intent_categorization_chain(llm):
 
-    openai_functions = [convert_to_openai_function(IntentRouter)]
-    llm_with_router = llm.bind(functions = openai_functions,function_call={"name":"IntentRouter"})
+    openai_functions = [convert_to_openai_function(IntentCategorizer)]
+    llm_with_functions = llm.bind(functions = openai_functions,function_call={"name":"IntentCategorizer"})
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a helpful assistant, you will analyze, translate and reformulate the user input message using the function provided"),
         ("user", "input: {input}")
     ])
 
-    chain = prompt | llm_with_router | JsonOutputFunctionsParser()
+    chain = prompt | llm_with_functions | JsonOutputFunctionsParser()
     return chain
 
 
-def make_intent_router_node(llm):
+def make_intent_categorization_node(llm):
 
-    router_chain = make_intent_router_chain(llm)
+    categorization_chain = make_intent_categorization_chain(llm)
 
-    def route_input_message(state):
-        output = router_chain.invoke({"input":state["user_input"]})
+    def categorize_message(state):
+        output = categorization_chain.invoke({"input":state["user_input"]})
         if "language" not in output: output["language"] = "English"
         output["query"] = state["user_input"]
         return output
     
-    return route_input_message
+    return categorize_message
 
 
 

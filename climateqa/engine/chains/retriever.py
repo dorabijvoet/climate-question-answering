@@ -45,7 +45,7 @@ def suppress_output():
 
 
 
-def make_retriever_node(vectorstore,reranker):
+def make_retriever_node(vectorstore,reranker,rerank_by_question=True, k_final=15, k_before_reranking=100, k_summary=5):
 
     def retrieve_documents(state):
         
@@ -53,15 +53,12 @@ def make_retriever_node(vectorstore,reranker):
         questions = state["questions"]
         
         # Use sources from the user input or from the LLM detection
-        sources_input = state["sources_input"] if "sources_input" in state else ["auto"]
+        if "sources_input" not in state or state["sources_input"] is None:
+            sources_input = ["auto"]
+        else:
+            sources_input = state["sources_input"]
         auto_mode = "auto" in sources_input
-        
-        # Constants
-        k_final = 15
-        k_before_reranking = 100
-        k_summary = 5
-        rerank_by_question = True
-        
+
         # There are several options to get the final top k
         # Option 1 - Get 100 documents by question and rerank by question
         # Option 2 - Get 100/n documents by question and rerank the total
@@ -96,9 +93,14 @@ def make_retriever_node(vectorstore,reranker):
             docs_question = retriever.get_relevant_documents(question)
             
             # Rerank
-            with suppress_output():
-                docs_question = rerank_docs(reranker,docs_question,question)
-            
+            if reranker is not None:
+                with suppress_output():
+                    docs_question = rerank_docs(reranker,docs_question,question)
+            else:
+                # Add a default reranking score
+                for doc in docs_question:
+                    doc.metadata["reranking_score"] = doc.metadata["similarity_score"]
+                
             # If rerank by question we select the top documents for each question
             if rerank_by_question:
                 docs_question = docs_question[:k_by_question[i]]
@@ -112,7 +114,7 @@ def make_retriever_node(vectorstore,reranker):
             
         # Sorting the list in descending order by rerank_score
         # Then select the top k
-        docs = sorted(docs, key=lambda x: x.metadata["rerank_score"], reverse=True)
+        docs = sorted(docs, key=lambda x: x.metadata["reranking_score"], reverse=True)
         docs = docs[:k_final]
         
         new_state = {"documents":docs}

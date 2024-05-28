@@ -4,7 +4,7 @@ embeddings_function = get_embeddings_function()
 from climateqa.papers.openalex import OpenAlex
 from sentence_transformers import CrossEncoder
 
-reranker = CrossEncoder("mixedbread-ai/mxbai-rerank-xsmall-v1")
+# reranker = CrossEncoder("mixedbread-ai/mxbai-rerank-xsmall-v1")
 oa = OpenAlex()
 
 import gradio as gr
@@ -29,16 +29,19 @@ from utils import create_user_id
 
 # ClimateQ&A imports
 from climateqa.engine.llm import get_llm
-from climateqa.engine.chains.answer_rag import make_rag_chain
 from climateqa.engine.vectorstore import get_pinecone_vectorstore
 from climateqa.engine.retriever import ClimateQARetriever
+from climateqa.engine.reranker import get_reranker
 from climateqa.engine.embeddings import get_embeddings_function
 from climateqa.engine.chains.prompts import audience_prompts
 from climateqa.sample_questions import QUESTIONS
 from climateqa.constants import POSSIBLE_REPORTS
 from climateqa.utils import get_image_from_azure_blob_storage
 from climateqa.engine.keywords import make_keywords_chain
-from climateqa.engine.chains.answer_rag import make_rag_papers_chain
+# from climateqa.engine.chains.answer_rag import make_rag_papers_chain
+from climateqa.engine.graph import make_graph_agent,display_graph
+
+from front.utils import make_html_source,parse_output_llm_with_sources,serialize_docs,make_toolbox
 
 # Load environment variables in local mode
 try:
@@ -81,40 +84,12 @@ user_id = create_user_id()
 
 
 
-def parse_output_llm_with_sources(output):
-    # Split the content into a list of text and "[Doc X]" references
-    content_parts = re.split(r'\[(Doc\s?\d+(?:,\s?Doc\s?\d+)*)\]', output)
-    parts = []
-    for part in content_parts:
-        if part.startswith("Doc"):
-            subparts = part.split(",")
-            subparts = [subpart.lower().replace("doc","").strip() for subpart in subparts]
-            subparts = [f"""<a href="#doc{subpart}" class="a-doc-ref" target="_self"><span class='doc-ref'><sup>{subpart}</sup></span></a>""" for subpart in subparts]
-            parts.append("".join(subparts))
-        else:
-            parts.append(part)
-    content_parts = "".join(parts)
-    return content_parts
-
-
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
 llm = get_llm(provider="openai",max_tokens = 1024,temperature = 0.0)
+reranker = get_reranker("nano")
+agent = make_graph_agent(llm,vectorstore,reranker)
 
-
-def make_pairs(lst):
-    """from a list of even lenght, make tupple pairs"""
-    return [(lst[i], lst[i + 1]) for i in range(0, len(lst), 2)]
-
-
-def serialize_docs(docs):
-    new_docs = []
-    for doc in docs:
-        new_doc = {}
-        new_doc["page_content"] = doc.page_content
-        new_doc["metadata"] = doc.metadata
-        new_docs.append(new_doc)
-    return new_docs
 
 
 
@@ -122,7 +97,8 @@ async def chat(query,history,audience,sources,reports):
     """taking a query and a message history, use a pipeline (reformulation, retriever, answering) to yield a tuple of:
     (messages in gradio format, messages in langchain format, source documents)"""
 
-    print(f">> NEW QUESTION : {query}")
+    date_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f">> NEW QUESTION ({date_now}) : {query}")
 
     if audience == "Children":
         audience_prompt = audience_prompts["children"]
@@ -139,59 +115,39 @@ async def chat(query,history,audience,sources,reports):
 
     if len(reports) == 0:
         reports = []
-
-    retriever = ClimateQARetriever(vectorstore=vectorstore,sources = sources,min_size = 200,reports = reports,k_summary = 3,k_total = 15,threshold=0.5)
-    rag_chain = make_rag_chain(retriever,llm)
     
-    inputs = {"query": query,"audience": audience_prompt}
-    result = rag_chain.astream_log(inputs) #{"callbacks":[MyCustomAsyncHandler()]})
+    inputs = {"user_input": query,"audience": audience_prompt,"sources":sources}
+    result = agent.astream_events(inputs,version = "v1") #{"callbacks":[MyCustomAsyncHandler()]})
     # result = rag_chain.stream(inputs)
 
-    path_reformulation = "/logs/reformulation/final_output"
-    path_keywords = "/logs/keywords/final_output"
-    path_retriever = "/logs/find_documents/final_output"
-    path_answer = "/logs/answer/streamed_output_str/-"
+    # path_reformulation = "/logs/reformulation/final_output"
+    # path_keywords = "/logs/keywords/final_output"
+    # path_retriever = "/logs/find_documents/final_output"
+    # path_answer = "/logs/answer/streamed_output_str/-"
 
+    docs = []
     docs_html = ""
     output_query = ""
     output_language = ""
     output_keywords = ""
     gallery = []
+    start_streaming = False
+
+    steps_display = {
+        "categorize_intent":("🔄️ Analyzing user message",True),
+        "transform_query":("🔄️ Thinking step by step to answer the question",True),
+        "retrieve_documents":("🔄️ Searching in the knowledge base",False),
+    }
 
     try:
-        async for op in result:
+        async for event in result:
 
-            op = op.ops[0]
+            if event["event"] == "on_chat_model_stream":
+                if start_streaming == False:
+                    start_streaming = True
+                    history[-1] = (query,"")
 
-            if op['path'] == path_reformulation: # reforulated question
-                try:
-                    output_language = op['value']["language"] # str
-                    output_query = op["value"]["question"]
-                except Exception as e:
-                    raise gr.Error(f"ClimateQ&A Error: {e} - The error has been noted, try another question and if the error remains, you can contact us :)")
-            
-            if op["path"] == path_keywords:
-                try:
-                    output_keywords = op['value']["keywords"] # str
-                    output_keywords = " AND ".join(output_keywords)
-                except Exception as e:
-                    pass
-            
-
-            elif op['path'] == path_retriever: # documents
-                try:
-                    docs = op['value']['docs'] # List[Document]
-                    docs_html = []
-                    for i, d in enumerate(docs, 1):
-                        docs_html.append(make_html_source(d, i))
-                    docs_html = "".join(docs_html)
-                except TypeError:
-                    print("No documents found")
-                    print("op: ",op)
-                    continue
-
-            elif op['path'] == path_answer: # final answer
-                new_token = op['value'] # str
+                new_token = event["data"]["chunk"].content
                 # time.sleep(0.01)
                 previous_answer = history[-1][1]
                 previous_answer = previous_answer if previous_answer is not None else ""
@@ -199,10 +155,47 @@ async def chat(query,history,audience,sources,reports):
                 answer_yet = parse_output_llm_with_sources(answer_yet)
                 history[-1] = (query,answer_yet)
 
+            
+            elif event["name"] == "retrieve_documents" and event["event"] == "on_chain_end":
+                try:
+                    docs = event["data"]["output"]["documents"]
+                    docs_html = []
+                    for i, d in enumerate(docs, 1):
+                        docs_html.append(make_html_source(d, i))
+                    docs_html = "".join(docs_html)
+                except Exception as e:
+                    print(f"Error getting documents: {e}")
+                    print(event)
 
 
-            else:
-                continue
+            for event_name,(event_description,display_output) in steps_display.items():
+                if event["name"] == event_name:
+                    if event["event"] == "on_chain_start":
+                        # answer_yet = f"<p><span class='loader'></span>{event_description}</p>"
+                        # answer_yet = make_toolbox(event_description, "", checked = False)
+                        answer_yet = event_description
+                        history[-1] = (query,answer_yet)
+                    # elif event["event"] == "on_chain_end":
+                    #     answer_yet = ""
+                    #     history[-1] = (query,answer_yet)
+                        # if display_output:
+                        #     print(event["data"]["output"])
+
+            # if op['path'] == path_reformulation: # reforulated question
+            #     try:
+            #         output_language = op['value']["language"] # str
+            #         output_query = op["value"]["question"]
+            #     except Exception as e:
+            #         raise gr.Error(f"ClimateQ&A Error: {e} - The error has been noted, try another question and if the error remains, you can contact us :)")
+            
+            # if op["path"] == path_keywords:
+            #     try:
+            #         output_keywords = op['value']["keywords"] # str
+            #         output_keywords = " AND ".join(output_keywords)
+            #     except Exception as e:
+            #         pass
+
+
 
             history = [tuple(x) for x in history]
             yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords
@@ -276,68 +269,6 @@ async def chat(query,history,audience,sources,reports):
     yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords
 
 
-def make_html_source(source,i):
-    meta = source.metadata
-    # content = source.page_content.split(":",1)[1].strip()
-    content = source.page_content.strip()
-
-    toc_levels = []
-    for j in range(2):
-        level = meta[f"toc_level{j}"]
-        if level != "N/A":
-            toc_levels.append(level)
-        else:
-            break
-    toc_levels = " > ".join(toc_levels)
-
-    if len(toc_levels) > 0:
-        name = f"<b>{toc_levels}</b><br/>{meta['name']}"
-    else:
-        name = meta['name']
-
-    if meta["chunk_type"] == "text":
-
-        card = f"""
-    <div class="card" id="doc{i}">
-        <div class="card-content">
-            <h2>Doc {i} - {meta['short_name']} - Page {int(meta['page_number'])}</h2>
-            <p>{content}</p>
-        </div>
-        <div class="card-footer">
-            <span>{name}</span>
-            <a href="{meta['url']}#page={int(meta['page_number'])}" target="_blank" class="pdf-link">
-                <span role="img" aria-label="Open PDF">🔗</span>
-            </a>
-        </div>
-    </div>
-    """
-    
-    else:
-
-        if meta["figure_code"] != "N/A":
-            title = f"{meta['figure_code']} - {meta['short_name']}"
-        else:
-            title = f"{meta['short_name']}"
-
-        card = f"""
-    <div class="card card-image">
-        <div class="card-content">
-            <h2>Image {i} - {title} - Page {int(meta['page_number'])}</h2>
-            <p>{content}</p>
-            <p class='ai-generated'>AI-generated description</p>
-        </div>
-        <div class="card-footer">
-            <span>{name}</span>
-            <a href="{meta['url']}#page={int(meta['page_number'])}" target="_blank" class="pdf-link">
-                <span role="img" aria-label="Open PDF">🔗</span>
-            </a>
-        </div>
-    </div>
-    """
-        
-    return card
-
-
 
 #     else:
 #         docs_string = "No relevant passages found in the climate science reports (IPCC and IPBES)"
@@ -390,54 +321,54 @@ papers_cols_widths = {
 papers_cols = list(papers_cols_widths.keys())
 papers_cols_widths = list(papers_cols_widths.values())
 
-async def find_papers(query, keywords,after):
+# async def find_papers(query, keywords,after):
 
-    summary = ""
+#     summary = ""
     
-    df_works = oa.search(keywords,after = after)
-    df_works = df_works.dropna(subset=["abstract"])
-    df_works = oa.rerank(query,df_works,reranker)
-    df_works = df_works.sort_values("rerank_score",ascending=False)
-    G = oa.make_network(df_works)
+#     df_works = oa.search(keywords,after = after)
+#     df_works = df_works.dropna(subset=["abstract"])
+#     df_works = oa.rerank(query,df_works,reranker)
+#     df_works = df_works.sort_values("rerank_score",ascending=False)
+#     G = oa.make_network(df_works)
 
-    height = "750px"
-    network = oa.show_network(G,color_by = "rerank_score",notebook=False,height = height)
-    network_html = network.generate_html()
+#     height = "750px"
+#     network = oa.show_network(G,color_by = "rerank_score",notebook=False,height = height)
+#     network_html = network.generate_html()
 
-    network_html = network_html.replace("'", "\"")
-    css_to_inject = "<style>#mynetwork { border: none !important; } .card { border: none !important; }</style>"
-    network_html = network_html + css_to_inject
+#     network_html = network_html.replace("'", "\"")
+#     css_to_inject = "<style>#mynetwork { border: none !important; } .card { border: none !important; }</style>"
+#     network_html = network_html + css_to_inject
 
     
-    network_html = f"""<iframe style="width: 100%; height: {height};margin:0 auto" name="result" allow="midi; geolocation; microphone; camera; 
-    display-capture; encrypted-media;" sandbox="allow-modals allow-forms 
-    allow-scripts allow-same-origin allow-popups 
-    allow-top-navigation-by-user-activation allow-downloads" allowfullscreen="" 
-    allowpaymentrequest="" frameborder="0" srcdoc='{network_html}'></iframe>"""
+#     network_html = f"""<iframe style="width: 100%; height: {height};margin:0 auto" name="result" allow="midi; geolocation; microphone; camera; 
+#     display-capture; encrypted-media;" sandbox="allow-modals allow-forms 
+#     allow-scripts allow-same-origin allow-popups 
+#     allow-top-navigation-by-user-activation allow-downloads" allowfullscreen="" 
+#     allowpaymentrequest="" frameborder="0" srcdoc='{network_html}'></iframe>"""
 
 
-    docs = df_works["content"].head(15).tolist()
+#     docs = df_works["content"].head(15).tolist()
 
-    df_works = df_works.reset_index(drop = True).reset_index().rename(columns = {"index":"doc"})
-    df_works["doc"] = df_works["doc"] + 1
-    df_works = df_works[papers_cols]
+#     df_works = df_works.reset_index(drop = True).reset_index().rename(columns = {"index":"doc"})
+#     df_works["doc"] = df_works["doc"] + 1
+#     df_works = df_works[papers_cols]
 
-    yield df_works,network_html,summary
+#     yield df_works,network_html,summary
 
-    chain = make_rag_papers_chain(llm)
-    result = chain.astream_log({"question": query,"docs": docs,"language":"English"})
-    path_answer = "/logs/StrOutputParser/streamed_output/-"
+#     chain = make_rag_papers_chain(llm)
+#     result = chain.astream_log({"question": query,"docs": docs,"language":"English"})
+#     path_answer = "/logs/StrOutputParser/streamed_output/-"
 
-    async for op in result:
+#     async for op in result:
 
-        op = op.ops[0]
+#         op = op.ops[0]
 
-        if op['path'] == path_answer: # reforulated question
-            new_token = op['value'] # str
-            summary += new_token
-        else:
-            continue
-        yield df_works,network_html,summary
+#         if op['path'] == path_answer: # reforulated question
+#             new_token = op['value'] # str
+#             summary += new_token
+#         else:
+#             continue
+#         yield df_works,network_html,summary
     
 
 
@@ -560,9 +491,6 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
 
 
-
-
-
 #---------------------------------------------------------------------------------------
 # OTHER TABS
 #---------------------------------------------------------------------------------------
@@ -571,25 +499,25 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     with gr.Tab("Figures",elem_id = "tab-images",elem_classes = "max-height other-tabs"):
         gallery_component = gr.Gallery()
 
-    with gr.Tab("Papers (beta)",elem_id = "tab-papers",elem_classes = "max-height other-tabs"):
+    # with gr.Tab("Papers (beta)",elem_id = "tab-papers",elem_classes = "max-height other-tabs"):
 
-        with gr.Row():
-            with gr.Column(scale=1):
-                query_papers = gr.Textbox(placeholder="Question",show_label=False,lines = 1,interactive = True,elem_id="query-papers")
-                keywords_papers = gr.Textbox(placeholder="Keywords",show_label=False,lines = 1,interactive = True,elem_id="keywords-papers")
-                after = gr.Slider(minimum=1950,maximum=2023,step=1,value=1960,label="Publication date",show_label=True,interactive=True,elem_id="date-papers")
-                search_papers = gr.Button("Search",elem_id="search-papers",interactive=True)
+    #     with gr.Row():
+    #         with gr.Column(scale=1):
+    #             query_papers = gr.Textbox(placeholder="Question",show_label=False,lines = 1,interactive = True,elem_id="query-papers")
+    #             keywords_papers = gr.Textbox(placeholder="Keywords",show_label=False,lines = 1,interactive = True,elem_id="keywords-papers")
+    #             after = gr.Slider(minimum=1950,maximum=2023,step=1,value=1960,label="Publication date",show_label=True,interactive=True,elem_id="date-papers")
+    #             search_papers = gr.Button("Search",elem_id="search-papers",interactive=True)
 
-            with gr.Column(scale=7):
+    #         with gr.Column(scale=7):
 
-                with gr.Tab("Summary",elem_id="papers-summary-tab"):
-                    papers_summary = gr.Markdown(visible=True,elem_id="papers-summary")
+    #             with gr.Tab("Summary",elem_id="papers-summary-tab"):
+    #                 papers_summary = gr.Markdown(visible=True,elem_id="papers-summary")
 
-                with gr.Tab("Relevant papers",elem_id="papers-results-tab"):
-                    papers_dataframe = gr.Dataframe(visible=True,elem_id="papers-table",headers = papers_cols)
+    #             with gr.Tab("Relevant papers",elem_id="papers-results-tab"):
+    #                 papers_dataframe = gr.Dataframe(visible=True,elem_id="papers-table",headers = papers_cols)
 
-                with gr.Tab("Citations network",elem_id="papers-network-tab"):
-                    citations_network = gr.HTML(visible=True,elem_id="papers-citations-network")
+    #             with gr.Tab("Citations network",elem_id="papers-network-tab"):
+    #                 citations_network = gr.HTML(visible=True,elem_id="papers-citations-network")
 
 
             
@@ -609,13 +537,13 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
     (textbox
         .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
-        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component,query_papers,keywords_papers],concurrency_limit = 8,api_name = "chat_textbox")
+        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_textbox")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
     )
 
     (examples_hidden
         .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
-        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component,query_papers,keywords_papers],concurrency_limit = 8,api_name = "chat_examples")
+        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_examples")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
     )
 
@@ -630,47 +558,8 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
     dropdown_samples.change(change_sample_questions,dropdown_samples,samples)
 
-    query_papers.submit(generate_keywords,[query_papers], [keywords_papers])
-    search_papers.click(find_papers,[query_papers,keywords_papers,after], [papers_dataframe,citations_network,papers_summary])
-
-    # # textbox.submit(predict_climateqa,[textbox,bot],[None,bot,sources_textbox])
-    # (textbox
-    #     .submit(answer_user, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-    #     .success(change_tab,None,tabs)
-    #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-    #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue = True)
-    #     .success(lambda x : textbox,[textbox],[textbox])
-    # )
-
-    # (examples_hidden
-    #     .change(answer_user_example, [textbox,examples_hidden, bot], [textbox, bot],queue = False)
-    #     .success(change_tab,None,tabs)
-    #     .success(fetch_sources,[textbox,dropdown_sources], [textbox,sources_textbox,docs_textbox,output_query,output_language])
-    #     .success(answer_bot, [textbox,bot,docs_textbox,output_query,output_language,dropdown_audience], [textbox,bot],queue=True)
-    #     .success(lambda x : textbox,[textbox],[textbox])
-    # )
-    # submit_button.click(answer_user, [textbox, bot], [textbox, bot], queue=True).then(
-    #         answer_bot, [textbox,bot,dropdown_audience,dropdown_sources], [textbox,bot,sources_textbox]
-    #     )
-
-
-    # with Modal(visible=True) as first_modal:
-    #     gr.Markdown("# Welcome to ClimateQ&A !")
-
-    #     gr.Markdown("### Examples")
-
-    #     examples = gr.Examples(
-    #         ["Yo ça roule","ça boume"],
-    #         [examples_hidden],
-    #         examples_per_page=8,
-    #         run_on_click=False,
-    #         elem_id="examples",
-    #         api_name="examples",
-    #     )
-
-
-    # submit.click(lambda: Modal(visible=True), None, config_modal)
-    
+    # query_papers.submit(generate_keywords,[query_papers], [keywords_papers])
+    # search_papers.click(find_papers,[query_papers,keywords_papers,after], [papers_dataframe,citations_network,papers_summary])
 
     demo.queue()
 

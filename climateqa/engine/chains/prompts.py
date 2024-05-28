@@ -56,7 +56,7 @@ Passages:
 {context}
 
 -----------------------
-Question: {question} - Explained to {audience}
+Question: {query} - Explained to {audience}
 Answer in {language} with the passages citations:
 """
 
@@ -137,7 +137,7 @@ Guidelines:
 - If the question is not related to environmental issues, never never answer it. Say it's not your role.
 - Make paragraphs by starting new lines to make your answers more readable. 
 
-Question: {question}
+Question: {query}
 Answer in {language}:
 """
 
