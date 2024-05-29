@@ -52,11 +52,15 @@ def route_translation(state):
         return "transform_query"
     else:
         return "translate_query"
-    
+
+# Le routing qui définit si on répond avec "answer_rag" ou "answer_rag_without_docs"
 def route_based_on_relevant_docs(state,threshold_docs=0.2):
     docs = [x for x in state["documents"] if x.metadata["reranking_score"] > threshold_docs]
     if len(docs) > 0:
         return "answer_rag"
+    # On regarde si on a au moins un document de type "graph" pertinent
+    elif len([x for x in state["documents"] if x.metadata["type"] == "graph"]) > 0: 
+        return "answer_rag_with_iea"
     else:
         return "answer_rag_no_docs"
     
