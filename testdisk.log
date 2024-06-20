@@ -1,0 +1,698 @@
+
+
+Thu Jun 20 10:14:06 2024
+Command line: TestDisk
+
+TestDisk 7.1, Data Recovery Utility, July 2019
+Christophe GRENIER <grenier@cgsecurity.org>
+https://www.cgsecurity.org
+OS: Linux, kernel 5.15.153.1-microsoft-standard-WSL2 (#1 SMP Fri Mar 29 23:14:13 UTC 2024) x86_64
+Compiler: GCC 12.2
+ext2fs lib: 1.47.0, ntfs lib: libntfs-3g, reiserfs lib: none, ewf lib: none, curses lib: ncurses 6.3
+User is not root!
+Hard disk list
+
+
+TestDisk exited normally.
+Using locale 'en_US.UTF-8'.
+
+
+Thu Jun 20 10:14:06 2024
+Command line: TestDisk /debug
+
+TestDisk 7.1, Data Recovery Utility, July 2019
+Christophe GRENIER <grenier@cgsecurity.org>
+https://www.cgsecurity.org
+OS: Linux, kernel 5.15.153.1-microsoft-standard-WSL2 (#1 SMP Fri Mar 29 23:14:13 UTC 2024) x86_64
+Compiler: GCC 12.2
+ext2fs lib: 1.47.0, ntfs lib: libntfs-3g, reiserfs lib: none, ewf lib: none, curses lib: ncurses 6.3
+Warning: can't get size for Disk /dev/mapper/control - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop0 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop1 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop2 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop3 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop4 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop5 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop6 - 0 B - 0 sectors, sector size=512
+Warning: can't get size for Disk /dev/loop7 - 0 B - 0 sectors, sector size=512
+Hard disk list
+Disk /dev/sda - 407 MB / 388 MiB - CHS 49 255 63 (RO), sector size=512 - Msft Virtual Disk, FW:1.0
+Disk /dev/sdb - 2147 MB / 2048 MiB - CHS 261 255 63, sector size=512 - Msft Virtual Disk, FW:1.0
+Disk /dev/sdc - 274 GB / 256 GiB - CHS 33418 255 63, sector size=512 - Msft Virtual Disk, FW:1.0
+
+Partition table type (auto): None
+Media is opened in read-only.
+Partition table type (auto): None
+Disk /dev/sdb - 2147 MB / 2048 MiB - Msft Virtual Disk
+Partition table type: None
+
+Interface Advanced
+   P Linux SWAP 2             0   0  1   261  21 24    4194312
+     SWAP2 version 1, pagesize=4096, 2147 MB / 2048 MiB
+Partition table type (auto): None
+Disk /dev/sdc - 274 GB / 256 GiB - Msft Virtual Disk
+Partition table type: None
+
+Interface Advanced
+
+recover_EXT2: s_block_group_nr=0/2048, s_mnt_count=49/4294967295, s_blocks_per_group=32768, s_inodes_per_group=8192
+recover_EXT2: s_blocksize=4096
+recover_EXT2: s_blocks_count 67108864
+recover_EXT2: part_size 536870912
+Filesystem created: Wed Apr 10 18:35:05 2019
+Last mount time:    Mon Jun 17 14:08:07 2024
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+
+
+dir_partition inode=2
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+      11 drwx------     0      0     16384 10-Apr-2019 18:35 lost+found
+      12 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 bin
+    8193 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 boot
+    8194 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 dev
+   16385 drwxr-xr-x     0      0      4096 20-Jun-2024 10:13 etc
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 home
+     372 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 lib
+     373 lrwxrwxrwx     0      0         9 25-Mar-2024 09:23 lib64
+   24577 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 media
+   24578 drwxr-xr-x     0      0      4096 10-Jun-2024 09:57 mnt
+   32769 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 opt
+   32770 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 proc
+   40961 drwx------     0      0      4096 25-Mar-2024 09:23 root
+   40962 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 run
+     396 lrwxrwxrwx     0      0         8 25-Mar-2024 09:23 sbin
+   49153 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 srv
+   49154 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 sys
+   57345 drwxrwxrwt     0      0     28672 20-Jun-2024 10:11 tmp
+   57346 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 usr
+   16387 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 var
+   10616 -rwxr-xr-x     0      0         0 17-Jun-2024 14:08 init
+Partition table type (auto): None
+Media is opened in read-only.
+Partition table type (auto): None
+Disk /dev/sdb - 2147 MB / 2048 MiB - Msft Virtual Disk
+Partition table type: None
+
+Interface Advanced
+   P Linux SWAP 2             0   0  1   261  21 24    4194312
+     SWAP2 version 1, pagesize=4096, 2147 MB / 2048 MiB
+Partition table type (auto): None
+Disk /dev/sdc - 274 GB / 256 GiB - Msft Virtual Disk
+Partition table type: None
+
+Interface Advanced
+
+recover_EXT2: s_block_group_nr=0/2048, s_mnt_count=49/4294967295, s_blocks_per_group=32768, s_inodes_per_group=8192
+recover_EXT2: s_blocksize=4096
+recover_EXT2: s_blocks_count 67108864
+recover_EXT2: part_size 536870912
+Filesystem created: Wed Apr 10 18:35:05 2019
+Last mount time:    Mon Jun 17 14:08:07 2024
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+
+
+dir_partition inode=2
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+      11 drwx------     0      0     16384 10-Apr-2019 18:35 lost+found
+      12 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 bin
+    8193 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 boot
+    8194 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 dev
+   16385 drwxr-xr-x     0      0      4096 20-Jun-2024 10:13 etc
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 home
+     372 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 lib
+     373 lrwxrwxrwx     0      0         9 25-Mar-2024 09:23 lib64
+   24577 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 media
+   24578 drwxr-xr-x     0      0      4096 10-Jun-2024 09:57 mnt
+   32769 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 opt
+   32770 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 proc
+   40961 drwx------     0      0      4096 25-Mar-2024 09:23 root
+   40962 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 run
+     396 lrwxrwxrwx     0      0         8 25-Mar-2024 09:23 sbin
+   49153 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 srv
+   49154 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 sys
+   57345 drwxrwxrwt     0      0     28672 20-Jun-2024 10:11 tmp
+   57346 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 usr
+   16387 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 var
+   10616 -rwxr-xr-x     0      0         0 17-Jun-2024 14:08 init
+
+dir_partition inode=16386
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 dora
+Directory /
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+      11 drwx------     0      0     16384 10-Apr-2019 18:35 lost+found
+      12 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 bin
+    8193 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 boot
+    8194 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 dev
+   16385 drwxr-xr-x     0      0      4096 20-Jun-2024 10:13 etc
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 home
+     372 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 lib
+     373 lrwxrwxrwx     0      0         9 25-Mar-2024 09:23 lib64
+   24577 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 media
+   24578 drwxr-xr-x     0      0      4096 10-Jun-2024 09:57 mnt
+   32769 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 opt
+   32770 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 proc
+   40961 drwx------     0      0      4096 25-Mar-2024 09:23 root
+   40962 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 run
+     396 lrwxrwxrwx     0      0         8 25-Mar-2024 09:23 sbin
+   49153 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 srv
+   49154 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 sys
+   57345 drwxrwxrwt     0      0     28672 20-Jun-2024 10:11 tmp
+   57346 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 usr
+   16387 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 var
+   10616 -rwxr-xr-x     0      0         0 17-Jun-2024 14:08 init
+
+dir_partition inode=16386
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 dora
+
+dir_partition inode=162
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 .
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 ..
+     314 -rw-r--r--  1000   1000       807 23-Apr-2024 15:05 .profile
+     325 -rw-r--r--  1000   1000       220 23-Apr-2024 15:05 .bash_logout
+   10625 -rw-r--r--  1000   1000      4015  3-Jun-2024 20:58 .bashrc
+      77 -rw-------  1000   1000     33120 19-Jun-2024 11:25 .bash_history
+     293 -rw-r--r--  1000   1000         0 24-Apr-2024 10:03 .sudo_as_admin_successful
+     453 -rwxr-xr-x  1000   1000 1045673900 26-Feb-2024 23:01 Anaconda3-2024.02-1-Linux-x86_64.sh
+     462 drwxr-xr-x  1000   1000      4096 29-Apr-2024 14:42 anaconda3
+    1746 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:13 .conda
+     466 drwxr-xr-x  1000   1000      4096  5-Jun-2024 17:11 .config
+  821409 -rw-------  1000   1000        85  6-Jun-2024 11:40 .python_history
+    3064 drwxr-xr-x  1000   1000      4096  7-Jun-2024 11:30 .cache
+  223882 drwxr-xr-x  1000   1000      4096 29-Apr-2024 19:46 .ipython
+  223895 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:30 .local
+    2870 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:38 .vscode-server
+  296875 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:47 .dotnet
+  342160 drwxr-xr-x  1000   1000      4096 29-Apr-2024 20:16 .jupyter
+  336340 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:29 climateqa
+   11026 drwx------  1000   1000      4096 14-May-2024 14:27 .pki
+  313397 drwxr-xr-x  1000   1000      4096  5-Jun-2024 15:15 guerbet
+     474 drwxr-xr-x  1000   1000      4096 14-May-2024 14:27 chrome-linux64
+  485013 -rw-------  1000   1000        20 19-Jun-2024 19:41 .lesshst
+  630882 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:18 .ssh
+    9688 drwxr-xr-x  1000   1000      4096 14-May-2024 14:00 chromedriver-linux64
+  523031 -rw-r--r--  1000   1000        27 17-May-2024 15:29 .gitconfig
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 climate-question-answering
+  630938 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:31 ai4s_celsius
+  630881 -rw-r--r--  1000   1000       109  3-Jun-2024 20:23 bitbucket_ekimetrics.pub
+  842732 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:43 .paddleocr
+  223795 -rw-r--r--  1000   1000       183 14-Jun-2024 18:10 .wget-hsts
+
+dir_partition inode=528245
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora/climate-question-answering
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 .
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 ..
+  555500 drwxr-xr-x  1000   1000      4096 12-Jun-2024 15:36 .git
+  555529 -rw-r--r--  1000   1000      2217 27-May-2024 13:47 .gitattributes
+  311795 -rw-r--r--  1000   1000       171 29-May-2024 14:37 .gitignore
+  555545 -rw-r--r--  1000   1000       267 27-May-2024 13:47 README.md
+  523120 -rw-r--r--  1000   1000     23632 11-Jun-2024 22:37 app.py
+  555547 drwxr-xr-x  1000   1000      4096 27-May-2024 13:47 assets
+  555549 -rw-r--r--  1000   1000       130 27-May-2024 13:47 background.png
+  555550 drwxr-xr-x  1000   1000      4096  3-Jun-2024 06:55 climateqa
+  524386 -rw-r--r--  1000   1000       350 29-May-2024 14:37 requirements.txt
+  555580 -rw-r--r--  1000   1000        16 27-May-2024 13:47 setup.py
+  524387 -rw-r--r--  1000   1000      8816 29-May-2024 14:37 style.css
+  555582 -rw-r--r--  1000   1000       759 27-May-2024 13:47 test
+  555583 -rw-r--r--  1000   1000       194 27-May-2024 13:47 utils.py
+  402654 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:41 __pycache__
+  528195 drwxr-xr-x  1000   1000      4096 29-May-2024 14:37 front
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 sandbox
+  555156 -rw-r--r--  1000   1000      1013  3-Jun-2024 07:48 .env
+  583392 drwxr-xr-x  1000   1000      4096 30-May-2024 01:04 .vscode
+  630806 drwxr-xr-x  1000   1000      4096  3-Jun-2024 15:22 .flashrank_cache
+  484941 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:49 cache
+  492182 drwxr-xr-x  1000   1000      4096 20-Jun-2024 09:44 .history
+  297508 -rw-r--r--  1000   1000      8192 20-Jun-2024 10:20 testdisk.log
+
+dir_partition inode=555155
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora/climate-question-answering/sandbox
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 .
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 ..
+  555533 -rw-r--r--  1000   1000    233512  6-Jun-2024 18:45 20240310 - CQA - Semantic Routing 1.ipynb
+  582533 -rw-r--r--  1000   1000     81421  3-Jun-2024 15:22 dora_cqa_testing.ipynb
+  303787 drwxr-xr-x  1000   1000      4096  6-Jun-2024 09:17 cache
+  492206 -rw-r--r--  1000   1000         0 20-Jun-2024 10:07 dora_tag_iea_testing.ipynb
+  484919 -rw-r--r--  1000   1000     61154 12-Jun-2024 09:21 final_graph.jpeg
+Directory /home/dora/climate-question-answering
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 .
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 ..
+  555500 drwxr-xr-x  1000   1000      4096 12-Jun-2024 15:36 .git
+  555529 -rw-r--r--  1000   1000      2217 27-May-2024 13:47 .gitattributes
+  311795 -rw-r--r--  1000   1000       171 29-May-2024 14:37 .gitignore
+  555545 -rw-r--r--  1000   1000       267 27-May-2024 13:47 README.md
+  523120 -rw-r--r--  1000   1000     23632 11-Jun-2024 22:37 app.py
+  555547 drwxr-xr-x  1000   1000      4096 27-May-2024 13:47 assets
+  555549 -rw-r--r--  1000   1000       130 27-May-2024 13:47 background.png
+  555550 drwxr-xr-x  1000   1000      4096  3-Jun-2024 06:55 climateqa
+  524386 -rw-r--r--  1000   1000       350 29-May-2024 14:37 requirements.txt
+  555580 -rw-r--r--  1000   1000        16 27-May-2024 13:47 setup.py
+  524387 -rw-r--r--  1000   1000      8816 29-May-2024 14:37 style.css
+  555582 -rw-r--r--  1000   1000       759 27-May-2024 13:47 test
+  555583 -rw-r--r--  1000   1000       194 27-May-2024 13:47 utils.py
+  402654 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:41 __pycache__
+  528195 drwxr-xr-x  1000   1000      4096 29-May-2024 14:37 front
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 sandbox
+  555156 -rw-r--r--  1000   1000      1013  3-Jun-2024 07:48 .env
+  583392 drwxr-xr-x  1000   1000      4096 30-May-2024 01:04 .vscode
+  630806 drwxr-xr-x  1000   1000      4096  3-Jun-2024 15:22 .flashrank_cache
+  484941 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:49 cache
+  492182 drwxr-xr-x  1000   1000      4096 20-Jun-2024 09:44 .history
+  297508 -rw-r--r--  1000   1000     12733 20-Jun-2024 10:21 testdisk.log
+Directory /home/dora
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 .
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 ..
+     314 -rw-r--r--  1000   1000       807 23-Apr-2024 15:05 .profile
+     325 -rw-r--r--  1000   1000       220 23-Apr-2024 15:05 .bash_logout
+   10625 -rw-r--r--  1000   1000      4015  3-Jun-2024 20:58 .bashrc
+      77 -rw-------  1000   1000     33120 19-Jun-2024 11:25 .bash_history
+     293 -rw-r--r--  1000   1000         0 24-Apr-2024 10:03 .sudo_as_admin_successful
+     453 -rwxr-xr-x  1000   1000 1045673900 26-Feb-2024 23:01 Anaconda3-2024.02-1-Linux-x86_64.sh
+     462 drwxr-xr-x  1000   1000      4096 29-Apr-2024 14:42 anaconda3
+    1746 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:13 .conda
+     466 drwxr-xr-x  1000   1000      4096  5-Jun-2024 17:11 .config
+  821409 -rw-------  1000   1000        85  6-Jun-2024 11:40 .python_history
+    3064 drwxr-xr-x  1000   1000      4096  7-Jun-2024 11:30 .cache
+  223882 drwxr-xr-x  1000   1000      4096 29-Apr-2024 19:46 .ipython
+  223895 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:30 .local
+    2870 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:38 .vscode-server
+  296875 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:47 .dotnet
+  342160 drwxr-xr-x  1000   1000      4096 29-Apr-2024 20:16 .jupyter
+  336340 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:29 climateqa
+   11026 drwx------  1000   1000      4096 14-May-2024 14:27 .pki
+  313397 drwxr-xr-x  1000   1000      4096  5-Jun-2024 15:15 guerbet
+     474 drwxr-xr-x  1000   1000      4096 14-May-2024 14:27 chrome-linux64
+  485013 -rw-------  1000   1000        20 19-Jun-2024 19:41 .lesshst
+  630882 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:18 .ssh
+    9688 drwxr-xr-x  1000   1000      4096 14-May-2024 14:00 chromedriver-linux64
+  523031 -rw-r--r--  1000   1000        27 17-May-2024 15:29 .gitconfig
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 climate-question-answering
+  630938 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:31 ai4s_celsius
+  630881 -rw-r--r--  1000   1000       109  3-Jun-2024 20:23 bitbucket_ekimetrics.pub
+  842732 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:43 .paddleocr
+  223795 -rw-r--r--  1000   1000       183 14-Jun-2024 18:10 .wget-hsts
+Directory /home
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 dora
+
+dir_partition inode=162
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 .
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 ..
+     314 -rw-r--r--  1000   1000       807 23-Apr-2024 15:05 .profile
+     325 -rw-r--r--  1000   1000       220 23-Apr-2024 15:05 .bash_logout
+   10625 -rw-r--r--  1000   1000      4015  3-Jun-2024 20:58 .bashrc
+      77 -rw-------  1000   1000     33120 19-Jun-2024 11:25 .bash_history
+     293 -rw-r--r--  1000   1000         0 24-Apr-2024 10:03 .sudo_as_admin_successful
+     453 -rwxr-xr-x  1000   1000 1045673900 26-Feb-2024 23:01 Anaconda3-2024.02-1-Linux-x86_64.sh
+     462 drwxr-xr-x  1000   1000      4096 29-Apr-2024 14:42 anaconda3
+    1746 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:13 .conda
+     466 drwxr-xr-x  1000   1000      4096  5-Jun-2024 17:11 .config
+  821409 -rw-------  1000   1000        85  6-Jun-2024 11:40 .python_history
+    3064 drwxr-xr-x  1000   1000      4096  7-Jun-2024 11:30 .cache
+  223882 drwxr-xr-x  1000   1000      4096 29-Apr-2024 19:46 .ipython
+  223895 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:30 .local
+    2870 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:38 .vscode-server
+  296875 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:47 .dotnet
+  342160 drwxr-xr-x  1000   1000      4096 29-Apr-2024 20:16 .jupyter
+  336340 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:29 climateqa
+   11026 drwx------  1000   1000      4096 14-May-2024 14:27 .pki
+  313397 drwxr-xr-x  1000   1000      4096  5-Jun-2024 15:15 guerbet
+     474 drwxr-xr-x  1000   1000      4096 14-May-2024 14:27 chrome-linux64
+  485013 -rw-------  1000   1000        20 19-Jun-2024 19:41 .lesshst
+  630882 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:18 .ssh
+    9688 drwxr-xr-x  1000   1000      4096 14-May-2024 14:00 chromedriver-linux64
+  523031 -rw-r--r--  1000   1000        27 17-May-2024 15:29 .gitconfig
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 climate-question-answering
+  630938 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:31 ai4s_celsius
+  630881 -rw-r--r--  1000   1000       109  3-Jun-2024 20:23 bitbucket_ekimetrics.pub
+  842732 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:43 .paddleocr
+  223795 -rw-r--r--  1000   1000       183 14-Jun-2024 18:10 .wget-hsts
+
+dir_partition inode=528245
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora/climate-question-answering
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 .
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 ..
+  555500 drwxr-xr-x  1000   1000      4096 12-Jun-2024 15:36 .git
+  555529 -rw-r--r--  1000   1000      2217 27-May-2024 13:47 .gitattributes
+  311795 -rw-r--r--  1000   1000       171 29-May-2024 14:37 .gitignore
+  555545 -rw-r--r--  1000   1000       267 27-May-2024 13:47 README.md
+  523120 -rw-r--r--  1000   1000     23632 11-Jun-2024 22:37 app.py
+  555547 drwxr-xr-x  1000   1000      4096 27-May-2024 13:47 assets
+  555549 -rw-r--r--  1000   1000       130 27-May-2024 13:47 background.png
+  555550 drwxr-xr-x  1000   1000      4096  3-Jun-2024 06:55 climateqa
+  524386 -rw-r--r--  1000   1000       350 29-May-2024 14:37 requirements.txt
+  555580 -rw-r--r--  1000   1000        16 27-May-2024 13:47 setup.py
+  524387 -rw-r--r--  1000   1000      8816 29-May-2024 14:37 style.css
+  555582 -rw-r--r--  1000   1000       759 27-May-2024 13:47 test
+  555583 -rw-r--r--  1000   1000       194 27-May-2024 13:47 utils.py
+  402654 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:41 __pycache__
+  528195 drwxr-xr-x  1000   1000      4096 29-May-2024 14:37 front
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 sandbox
+  555156 -rw-r--r--  1000   1000      1013  3-Jun-2024 07:48 .env
+  583392 drwxr-xr-x  1000   1000      4096 30-May-2024 01:04 .vscode
+  630806 drwxr-xr-x  1000   1000      4096  3-Jun-2024 15:22 .flashrank_cache
+  484941 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:49 cache
+  492182 drwxr-xr-x  1000   1000      4096 20-Jun-2024 09:44 .history
+  297508 -rw-r--r--  1000   1000     16384 20-Jun-2024 10:21 testdisk.log
+
+dir_partition inode=555155
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora/climate-question-answering/sandbox
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 .
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 ..
+  555533 -rw-r--r--  1000   1000    233512  6-Jun-2024 18:45 20240310 - CQA - Semantic Routing 1.ipynb
+  582533 -rw-r--r--  1000   1000     81421  3-Jun-2024 15:22 dora_cqa_testing.ipynb
+  303787 drwxr-xr-x  1000   1000      4096  6-Jun-2024 09:17 cache
+  492206 -rw-r--r--  1000   1000         0 20-Jun-2024 10:07 dora_tag_iea_testing.ipynb
+  484919 -rw-r--r--  1000   1000     61154 12-Jun-2024 09:21 final_graph.jpeg
+Directory /home/dora/climate-question-answering
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 .
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 ..
+  555500 drwxr-xr-x  1000   1000      4096 12-Jun-2024 15:36 .git
+  555529 -rw-r--r--  1000   1000      2217 27-May-2024 13:47 .gitattributes
+  311795 -rw-r--r--  1000   1000       171 29-May-2024 14:37 .gitignore
+  555545 -rw-r--r--  1000   1000       267 27-May-2024 13:47 README.md
+  523120 -rw-r--r--  1000   1000     23632 11-Jun-2024 22:37 app.py
+  555547 drwxr-xr-x  1000   1000      4096 27-May-2024 13:47 assets
+  555549 -rw-r--r--  1000   1000       130 27-May-2024 13:47 background.png
+  555550 drwxr-xr-x  1000   1000      4096  3-Jun-2024 06:55 climateqa
+  524386 -rw-r--r--  1000   1000       350 29-May-2024 14:37 requirements.txt
+  555580 -rw-r--r--  1000   1000        16 27-May-2024 13:47 setup.py
+  524387 -rw-r--r--  1000   1000      8816 29-May-2024 14:37 style.css
+  555582 -rw-r--r--  1000   1000       759 27-May-2024 13:47 test
+  555583 -rw-r--r--  1000   1000       194 27-May-2024 13:47 utils.py
+  402654 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:41 __pycache__
+  528195 drwxr-xr-x  1000   1000      4096 29-May-2024 14:37 front
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 sandbox
+  555156 -rw-r--r--  1000   1000      1013  3-Jun-2024 07:48 .env
+  583392 drwxr-xr-x  1000   1000      4096 30-May-2024 01:04 .vscode
+  630806 drwxr-xr-x  1000   1000      4096  3-Jun-2024 15:22 .flashrank_cache
+  484941 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:49 cache
+  492182 drwxr-xr-x  1000   1000      4096 20-Jun-2024 09:44 .history
+  297508 -rw-r--r--  1000   1000     16384 20-Jun-2024 10:21 testdisk.log
+Directory /home/dora
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 .
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 ..
+     314 -rw-r--r--  1000   1000       807 23-Apr-2024 15:05 .profile
+     325 -rw-r--r--  1000   1000       220 23-Apr-2024 15:05 .bash_logout
+   10625 -rw-r--r--  1000   1000      4015  3-Jun-2024 20:58 .bashrc
+      77 -rw-------  1000   1000     33120 19-Jun-2024 11:25 .bash_history
+     293 -rw-r--r--  1000   1000         0 24-Apr-2024 10:03 .sudo_as_admin_successful
+     453 -rwxr-xr-x  1000   1000 1045673900 26-Feb-2024 23:01 Anaconda3-2024.02-1-Linux-x86_64.sh
+     462 drwxr-xr-x  1000   1000      4096 29-Apr-2024 14:42 anaconda3
+    1746 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:13 .conda
+     466 drwxr-xr-x  1000   1000      4096  5-Jun-2024 17:11 .config
+  821409 -rw-------  1000   1000        85  6-Jun-2024 11:40 .python_history
+    3064 drwxr-xr-x  1000   1000      4096  7-Jun-2024 11:30 .cache
+  223882 drwxr-xr-x  1000   1000      4096 29-Apr-2024 19:46 .ipython
+  223895 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:30 .local
+    2870 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:38 .vscode-server
+  296875 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:47 .dotnet
+  342160 drwxr-xr-x  1000   1000      4096 29-Apr-2024 20:16 .jupyter
+  336340 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:29 climateqa
+   11026 drwx------  1000   1000      4096 14-May-2024 14:27 .pki
+  313397 drwxr-xr-x  1000   1000      4096  5-Jun-2024 15:15 guerbet
+     474 drwxr-xr-x  1000   1000      4096 14-May-2024 14:27 chrome-linux64
+  485013 -rw-------  1000   1000        20 19-Jun-2024 19:41 .lesshst
+  630882 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:18 .ssh
+    9688 drwxr-xr-x  1000   1000      4096 14-May-2024 14:00 chromedriver-linux64
+  523031 -rw-r--r--  1000   1000        27 17-May-2024 15:29 .gitconfig
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 climate-question-answering
+  630938 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:31 ai4s_celsius
+  630881 -rw-r--r--  1000   1000       109  3-Jun-2024 20:23 bitbucket_ekimetrics.pub
+  842732 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:43 .paddleocr
+  223795 -rw-r--r--  1000   1000       183 14-Jun-2024 18:10 .wget-hsts
+Directory /home
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 dora
+Directory /
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+      11 drwx------     0      0     16384 10-Apr-2019 18:35 lost+found
+      12 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 bin
+    8193 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 boot
+    8194 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 dev
+   16385 drwxr-xr-x     0      0      4096 20-Jun-2024 10:13 etc
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 home
+     372 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 lib
+     373 lrwxrwxrwx     0      0         9 25-Mar-2024 09:23 lib64
+   24577 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 media
+   24578 drwxr-xr-x     0      0      4096 10-Jun-2024 09:57 mnt
+   32769 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 opt
+   32770 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 proc
+   40961 drwx------     0      0      4096 25-Mar-2024 09:23 root
+   40962 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 run
+     396 lrwxrwxrwx     0      0         8 25-Mar-2024 09:23 sbin
+   49153 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 srv
+   49154 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 sys
+   57345 drwxrwxrwt     0      0     28672 20-Jun-2024 10:11 tmp
+   57346 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 usr
+   16387 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 var
+   10616 -rwxr-xr-x     0      0         0 17-Jun-2024 14:08 init
+
+Interface Advanced
+
+recover_EXT2: s_block_group_nr=0/2048, s_mnt_count=49/4294967295, s_blocks_per_group=32768, s_inodes_per_group=8192
+recover_EXT2: s_blocksize=4096
+recover_EXT2: s_blocks_count 67108864
+recover_EXT2: part_size 536870912
+Filesystem created: Wed Apr 10 18:35:05 2019
+Last mount time:    Mon Jun 17 14:08:07 2024
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+
+
+dir_partition inode=2
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+      11 drwx------     0      0     16384 10-Apr-2019 18:35 lost+found
+      12 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 bin
+    8193 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 boot
+    8194 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 dev
+   16385 drwxr-xr-x     0      0      4096 20-Jun-2024 10:13 etc
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 home
+     372 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 lib
+     373 lrwxrwxrwx     0      0         9 25-Mar-2024 09:23 lib64
+   24577 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 media
+   24578 drwxr-xr-x     0      0      4096 10-Jun-2024 09:57 mnt
+   32769 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 opt
+   32770 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 proc
+   40961 drwx------     0      0      4096 25-Mar-2024 09:23 root
+   40962 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 run
+     396 lrwxrwxrwx     0      0         8 25-Mar-2024 09:23 sbin
+   49153 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 srv
+   49154 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 sys
+   57345 drwxrwxrwt     0      0     28672 20-Jun-2024 10:11 tmp
+   57346 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 usr
+   16387 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 var
+   10616 -rwxr-xr-x     0      0         0 17-Jun-2024 14:08 init
+
+dir_partition inode=16386
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 dora
+
+dir_partition inode=162
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 .
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 ..
+     314 -rw-r--r--  1000   1000       807 23-Apr-2024 15:05 .profile
+     325 -rw-r--r--  1000   1000       220 23-Apr-2024 15:05 .bash_logout
+   10625 -rw-r--r--  1000   1000      4015  3-Jun-2024 20:58 .bashrc
+      77 -rw-------  1000   1000     33120 19-Jun-2024 11:25 .bash_history
+     293 -rw-r--r--  1000   1000         0 24-Apr-2024 10:03 .sudo_as_admin_successful
+     453 -rwxr-xr-x  1000   1000 1045673900 26-Feb-2024 23:01 Anaconda3-2024.02-1-Linux-x86_64.sh
+     462 drwxr-xr-x  1000   1000      4096 29-Apr-2024 14:42 anaconda3
+    1746 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:13 .conda
+     466 drwxr-xr-x  1000   1000      4096  5-Jun-2024 17:11 .config
+  821409 -rw-------  1000   1000        85  6-Jun-2024 11:40 .python_history
+    3064 drwxr-xr-x  1000   1000      4096  7-Jun-2024 11:30 .cache
+  223882 drwxr-xr-x  1000   1000      4096 29-Apr-2024 19:46 .ipython
+  223895 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:30 .local
+    2870 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:38 .vscode-server
+  296875 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:47 .dotnet
+  342160 drwxr-xr-x  1000   1000      4096 29-Apr-2024 20:16 .jupyter
+  336340 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:29 climateqa
+   11026 drwx------  1000   1000      4096 14-May-2024 14:27 .pki
+  313397 drwxr-xr-x  1000   1000      4096  5-Jun-2024 15:15 guerbet
+     474 drwxr-xr-x  1000   1000      4096 14-May-2024 14:27 chrome-linux64
+  485013 -rw-------  1000   1000        20 19-Jun-2024 19:41 .lesshst
+  630882 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:18 .ssh
+    9688 drwxr-xr-x  1000   1000      4096 14-May-2024 14:00 chromedriver-linux64
+  523031 -rw-r--r--  1000   1000        27 17-May-2024 15:29 .gitconfig
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 climate-question-answering
+  630938 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:31 ai4s_celsius
+  630881 -rw-r--r--  1000   1000       109  3-Jun-2024 20:23 bitbucket_ekimetrics.pub
+  842732 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:43 .paddleocr
+  223795 -rw-r--r--  1000   1000       183 14-Jun-2024 18:10 .wget-hsts
+
+dir_partition inode=528245
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora/climate-question-answering
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 .
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 ..
+  555500 drwxr-xr-x  1000   1000      4096 12-Jun-2024 15:36 .git
+  555529 -rw-r--r--  1000   1000      2217 27-May-2024 13:47 .gitattributes
+  311795 -rw-r--r--  1000   1000       171 29-May-2024 14:37 .gitignore
+  555545 -rw-r--r--  1000   1000       267 27-May-2024 13:47 README.md
+  523120 -rw-r--r--  1000   1000     23632 11-Jun-2024 22:37 app.py
+  555547 drwxr-xr-x  1000   1000      4096 27-May-2024 13:47 assets
+  555549 -rw-r--r--  1000   1000       130 27-May-2024 13:47 background.png
+  555550 drwxr-xr-x  1000   1000      4096  3-Jun-2024 06:55 climateqa
+  524386 -rw-r--r--  1000   1000       350 29-May-2024 14:37 requirements.txt
+  555580 -rw-r--r--  1000   1000        16 27-May-2024 13:47 setup.py
+  524387 -rw-r--r--  1000   1000      8816 29-May-2024 14:37 style.css
+  555582 -rw-r--r--  1000   1000       759 27-May-2024 13:47 test
+  555583 -rw-r--r--  1000   1000       194 27-May-2024 13:47 utils.py
+  402654 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:41 __pycache__
+  528195 drwxr-xr-x  1000   1000      4096 29-May-2024 14:37 front
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 sandbox
+  555156 -rw-r--r--  1000   1000      1013  3-Jun-2024 07:48 .env
+  583392 drwxr-xr-x  1000   1000      4096 30-May-2024 01:04 .vscode
+  630806 drwxr-xr-x  1000   1000      4096  3-Jun-2024 15:22 .flashrank_cache
+  484941 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:49 cache
+  492182 drwxr-xr-x  1000   1000      4096 20-Jun-2024 09:44 .history
+  297508 -rw-r--r--  1000   1000     33213 20-Jun-2024 10:22 testdisk.log
+
+dir_partition inode=555155
+   P ext4                     0   0  1 33418 170 32  536870912
+     ext4 blocksize=4096 Large_file Sparse_SB Recover, 274 GB / 256 GiB
+Directory /home/dora/climate-question-answering/sandbox
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 .
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 ..
+  555533 -rw-r--r--  1000   1000    233512  6-Jun-2024 18:45 20240310 - CQA - Semantic Routing 1.ipynb
+  582533 -rw-r--r--  1000   1000     81421  3-Jun-2024 15:22 dora_cqa_testing.ipynb
+  303787 drwxr-xr-x  1000   1000      4096  6-Jun-2024 09:17 cache
+  492206 -rw-r--r--  1000   1000         0 20-Jun-2024 10:07 dora_tag_iea_testing.ipynb
+  484919 -rw-r--r--  1000   1000     61154 12-Jun-2024 09:21 final_graph.jpeg
+Directory /home/dora/climate-question-answering
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 .
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 ..
+  555500 drwxr-xr-x  1000   1000      4096 12-Jun-2024 15:36 .git
+  555529 -rw-r--r--  1000   1000      2217 27-May-2024 13:47 .gitattributes
+  311795 -rw-r--r--  1000   1000       171 29-May-2024 14:37 .gitignore
+  555545 -rw-r--r--  1000   1000       267 27-May-2024 13:47 README.md
+  523120 -rw-r--r--  1000   1000     23632 11-Jun-2024 22:37 app.py
+  555547 drwxr-xr-x  1000   1000      4096 27-May-2024 13:47 assets
+  555549 -rw-r--r--  1000   1000       130 27-May-2024 13:47 background.png
+  555550 drwxr-xr-x  1000   1000      4096  3-Jun-2024 06:55 climateqa
+  524386 -rw-r--r--  1000   1000       350 29-May-2024 14:37 requirements.txt
+  555580 -rw-r--r--  1000   1000        16 27-May-2024 13:47 setup.py
+  524387 -rw-r--r--  1000   1000      8816 29-May-2024 14:37 style.css
+  555582 -rw-r--r--  1000   1000       759 27-May-2024 13:47 test
+  555583 -rw-r--r--  1000   1000       194 27-May-2024 13:47 utils.py
+  402654 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:41 __pycache__
+  528195 drwxr-xr-x  1000   1000      4096 29-May-2024 14:37 front
+  555155 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:07 sandbox
+  555156 -rw-r--r--  1000   1000      1013  3-Jun-2024 07:48 .env
+  583392 drwxr-xr-x  1000   1000      4096 30-May-2024 01:04 .vscode
+  630806 drwxr-xr-x  1000   1000      4096  3-Jun-2024 15:22 .flashrank_cache
+  484941 drwxr-xr-x  1000   1000      4096 11-Jun-2024 22:49 cache
+  492182 drwxr-xr-x  1000   1000      4096 20-Jun-2024 09:44 .history
+  297508 -rw-r--r--  1000   1000     33213 20-Jun-2024 10:22 testdisk.log
+Directory /home/dora
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 .
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 ..
+     314 -rw-r--r--  1000   1000       807 23-Apr-2024 15:05 .profile
+     325 -rw-r--r--  1000   1000       220 23-Apr-2024 15:05 .bash_logout
+   10625 -rw-r--r--  1000   1000      4015  3-Jun-2024 20:58 .bashrc
+      77 -rw-------  1000   1000     33120 19-Jun-2024 11:25 .bash_history
+     293 -rw-r--r--  1000   1000         0 24-Apr-2024 10:03 .sudo_as_admin_successful
+     453 -rwxr-xr-x  1000   1000 1045673900 26-Feb-2024 23:01 Anaconda3-2024.02-1-Linux-x86_64.sh
+     462 drwxr-xr-x  1000   1000      4096 29-Apr-2024 14:42 anaconda3
+    1746 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:13 .conda
+     466 drwxr-xr-x  1000   1000      4096  5-Jun-2024 17:11 .config
+  821409 -rw-------  1000   1000        85  6-Jun-2024 11:40 .python_history
+    3064 drwxr-xr-x  1000   1000      4096  7-Jun-2024 11:30 .cache
+  223882 drwxr-xr-x  1000   1000      4096 29-Apr-2024 19:46 .ipython
+  223895 drwxr-xr-x  1000   1000      4096 29-Apr-2024 15:30 .local
+    2870 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:38 .vscode-server
+  296875 drwxr-xr-x  1000   1000      4096 29-Apr-2024 18:47 .dotnet
+  342160 drwxr-xr-x  1000   1000      4096 29-Apr-2024 20:16 .jupyter
+  336340 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:29 climateqa
+   11026 drwx------  1000   1000      4096 14-May-2024 14:27 .pki
+  313397 drwxr-xr-x  1000   1000      4096  5-Jun-2024 15:15 guerbet
+     474 drwxr-xr-x  1000   1000      4096 14-May-2024 14:27 chrome-linux64
+  485013 -rw-------  1000   1000        20 19-Jun-2024 19:41 .lesshst
+  630882 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:18 .ssh
+    9688 drwxr-xr-x  1000   1000      4096 14-May-2024 14:00 chromedriver-linux64
+  523031 -rw-r--r--  1000   1000        27 17-May-2024 15:29 .gitconfig
+  528245 drwxr-xr-x  1000   1000      4096 20-Jun-2024 10:14 climate-question-answering
+  630938 drwxr-xr-x  1000   1000      4096  3-Jun-2024 21:31 ai4s_celsius
+  630881 -rw-r--r--  1000   1000       109  3-Jun-2024 20:23 bitbucket_ekimetrics.pub
+  842732 drwxr-xr-x  1000   1000      4096  6-Jun-2024 11:43 .paddleocr
+  223795 -rw-r--r--  1000   1000       183 14-Jun-2024 18:10 .wget-hsts
+Directory /home
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+     162 drwx------  1000   1000      4096 19-Jun-2024 19:41 dora
+Directory /
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 .
+       2 drwxr-xr-x     0      0      4096 17-Jun-2024 14:08 ..
+      11 drwx------     0      0     16384 10-Apr-2019 18:35 lost+found
+      12 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 bin
+    8193 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 boot
+    8194 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 dev
+   16385 drwxr-xr-x     0      0      4096 20-Jun-2024 10:13 etc
+   16386 drwxr-xr-x     0      0      4096 23-Apr-2024 15:05 home
+     372 lrwxrwxrwx     0      0         7 25-Mar-2024 09:23 lib
+     373 lrwxrwxrwx     0      0         9 25-Mar-2024 09:23 lib64
+   24577 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 media
+   24578 drwxr-xr-x     0      0      4096 10-Jun-2024 09:57 mnt
+   32769 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 opt
+   32770 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 proc
+   40961 drwx------     0      0      4096 25-Mar-2024 09:23 root
+   40962 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 run
+     396 lrwxrwxrwx     0      0         8 25-Mar-2024 09:23 sbin
+   49153 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 srv
+   49154 drwxr-xr-x     0      0      4096 28-Jan-2024 22:20 sys
+   57345 drwxrwxrwt     0      0     28672 20-Jun-2024 10:11 tmp
+   57346 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 usr
+   16387 drwxr-xr-x     0      0      4096 25-Mar-2024 09:23 var
+   10616 -rwxr-xr-x     0      0         0 17-Jun-2024 14:08 init
+
+TestDisk exited normally.

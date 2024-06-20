@@ -16,7 +16,7 @@ class IntentCategorizer(BaseModel):
     )
     intent: str = Field(
         enum=[
-            "ai_impact",
+            "ai",
             "geo_info",
             "esg",
             "search",
@@ -27,7 +27,7 @@ class IntentCategorizer(BaseModel):
             Any question
 
             Examples:
-            - ai_impact = Environmental impacts of AI: "What are the environmental impacts of AI", "How does AI affect the environment"
+            - ai = Environmental impacts of AI: "What are the environmental impacts of AI", "How does AI affect the environment", "What is the carbon footprint of Artificial Intelligence", "How does AI contribute to climate change"
             - geo_info = Geolocated info about climate change: Any question where the user wants to know localized impacts of climate change, eg: "What will be the temperature in Marseille in 2050"
             - esg = Any question about the ESG regulation, frameworks and standards like the CSRD, TCFD, SASB, GRI, CDP, etc.
             - search = Searching for any quesiton about climate change, energy, biodiversity, nature, and everything we can find the IPCC or IPBES reports or scientific papers,

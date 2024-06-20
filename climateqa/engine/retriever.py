@@ -18,8 +18,8 @@ class ClimateQARetriever(BaseRetriever):
     threshold:float = 0.6
     k_summary:int = 3
     k_total:int = 10
-    namespace:str = "vectors",
-    min_size:int = 200,
+    namespace:str = "vectors"
+    min_size:int = 200
 
 
     def _get_relevant_documents(
@@ -28,7 +28,8 @@ class ClimateQARetriever(BaseRetriever):
 
         # Check if all elements in the list are either IPCC or IPBES
         assert isinstance(self.sources,list)
-        assert all([x in ["IPCC","IPBES","IPOS"] for x in self.sources])
+        # assert all([x in ["IPCC","IPBES","IPOS"] for x in self.sources])
+        assert any([x in ["IPCC","IPBES","IPOS"] for x in self.sources])
         assert self.k_total > self.k_summary, "k_total should be greater than k_summary"
 
         # Prepare base search kwargs

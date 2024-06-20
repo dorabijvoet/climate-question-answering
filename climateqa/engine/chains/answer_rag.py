@@ -29,6 +29,25 @@ def _combine_documents(
 
     return sep.join(doc_strings)
 
+# def _combine_recommended_content(
+#     docs, document_prompt=DEFAULT_DOCUMENT_PROMPT, sep="\n\n"
+# ):
+#     doc_strings =  []
+
+#     for i,doc in enumerate(docs):
+#         # chunk_type = "Doc" if doc.metadata["chunk_type"] == "text" else "Image"
+#         chunk_type = "Doc"
+#         if isinstance(doc,str):
+#             doc_formatted = doc
+#         else:
+#             doc_formatted = format_document(doc, document_prompt)
+
+#         doc_string = f"{chunk_type} {i+1}: " + doc_formatted
+#         # doc_string = doc_string.replace("\n"," ") 
+#         doc_strings.append(doc_string)
+
+#     return sep.join(doc_strings)
+
 
 def get_text_docs(x):
     return [doc for doc in x if doc.metadata["chunk_type"] == "text"]

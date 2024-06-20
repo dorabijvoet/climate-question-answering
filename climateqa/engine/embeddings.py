@@ -10,7 +10,7 @@ def get_embeddings_function(version = "v1.2",query_instruction = "Represent this
         # Best embedding model at a reasonable size at the moment (2023-11-22)
     
         model_name = "BAAI/bge-base-en-v1.5"
-        encode_kwargs = {'normalize_embeddings': True,"show_progress_bar":False} # set True to compute cosine similarity
+        encode_kwargs = {'normalize_embeddings': True,"show_progress_bar":True} # set True to compute cosine similarity
         print("Loading embeddings model: ", model_name)
         embeddings_function = HuggingFaceBgeEmbeddings(
             model_name=model_name,

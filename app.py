@@ -1,5 +1,4 @@
 from climateqa.engine.embeddings import get_embeddings_function
-embeddings_function = get_embeddings_function()
 
 from climateqa.papers.openalex import OpenAlex
 from sentence_transformers import CrossEncoder
@@ -40,6 +39,7 @@ from climateqa.utils import get_image_from_azure_blob_storage
 from climateqa.engine.keywords import make_keywords_chain
 # from climateqa.engine.chains.answer_rag import make_rag_papers_chain
 from climateqa.engine.graph import make_graph_agent,display_graph
+from climateqa.engine.iea_vectorstore import get_chroma_vectorstore
 
 from front.utils import make_html_source,parse_output_llm_with_sources,serialize_docs,make_toolbox
 
@@ -84,11 +84,19 @@ user_id = create_user_id()
 
 
 
-# Create vectorstore and retriever
-vectorstore = get_pinecone_vectorstore(embeddings_function)
+# Create vectorstore and retriever for climateQ&A
 llm = get_llm(provider="openai",max_tokens = 1024,temperature = 0.0)
-reranker = get_reranker("large")
-agent = make_graph_agent(llm,vectorstore,reranker)
+
+#reranker = get_reranker("large")
+reranker = get_reranker("nano")
+
+iea_embeddings_function = get_embeddings_function(query_instruction="") # No query instruction ?
+iea_vectorstore = get_chroma_vectorstore(iea_embeddings_function)
+
+climateqa_embeddings_function = get_embeddings_function()
+climateqa_vectorstore = get_pinecone_vectorstore(climateqa_embeddings_function)
+
+agent = make_graph_agent(llm,climateqa_vectorstore,iea_vectorstore,reranker)
 
 
 

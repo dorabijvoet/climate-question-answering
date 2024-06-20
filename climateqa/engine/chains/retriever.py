@@ -86,10 +86,11 @@ def make_retriever_node(vectorstore,reranker,rerank_by_question=True, k_final=15
                 vectorstore=vectorstore,
                 sources = sources,
                 # reports = ias_reports,
-            min_size = 200,
-            k_summary = k_summary,k_total = k_before_reranking,
-            threshold = 0.5,
-            )
+                min_size = 200,
+                k_summary = k_summary,
+                k_total = k_before_reranking,
+                threshold = 0.5,
+                )
             docs_question = retriever.get_relevant_documents(question)
             
             # Rerank
