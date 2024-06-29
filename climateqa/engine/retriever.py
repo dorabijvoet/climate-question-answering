@@ -38,12 +38,12 @@ class ClimateQARetriever(BaseRetriever):
         if len(self.reports) > 0:
             filters["short_name"] = {"$in":self.reports}
         else:
-            filters["source"] = { "$in":self.sources}
+            filters["source"] = {"$in":self.sources}
 
         # Search for k_summary documents in the summaries dataset
         filters_summaries = {
             **filters,
-            "report_type": { "$in":["SPM"]},
+            "report_type": {"$in":["SPM"]},
         }
 
         docs_summaries = self.vectorstore.similarity_search_with_score(query=query,filter = filters_summaries,k = self.k_summary)

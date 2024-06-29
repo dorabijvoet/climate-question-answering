@@ -155,3 +155,14 @@ def make_graph_agent_with_recommended_content(llm,cqa_vectorstore,iea_vectorstor
     # Compile
     app = workflow.compile()
     return app
+
+
+def display_graph(app):
+
+    display(
+        Image(
+            app.get_graph(xray = True).draw_mermaid_png(
+                draw_method=MermaidDrawMethod.API,
+            )
+        )
+    )
