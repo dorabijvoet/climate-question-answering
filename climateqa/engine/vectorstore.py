@@ -4,6 +4,7 @@
 import os
 from pinecone import Pinecone
 from langchain_community.vectorstores import Pinecone as PineconeVectorstore
+from langchain_chroma import Chroma
 
 # LOAD ENVIRONMENT VARIABLES
 try:
@@ -11,6 +12,11 @@ try:
     load_dotenv()
 except:
     pass
+
+
+def get_chroma_vectorstore(embedding_function, persist_directory="/home/dora/climate-question-answering/data/vectorstore"):
+    vectorstore = Chroma(persist_directory=persist_directory, embedding_function=embedding_function)
+    return vectorstore
 
 
 def get_pinecone_vectorstore(embeddings,text_key = "content"):
