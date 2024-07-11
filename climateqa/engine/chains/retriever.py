@@ -49,7 +49,7 @@ def make_retriever_node(vectorstore,reranker,rerank_by_question=True, k_final=15
 
     def retrieve_documents(state):
         
-        POSSIBLE_SOURCES = ["IPCC","IPBES","IPOS","OpenAlex"]
+        POSSIBLE_SOURCES = ["IPCC","IPBES","IPOS"] # ,"OpenAlex"]
         questions = state["questions"]
         
         # Use sources from the user input or from the LLM detection

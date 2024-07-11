@@ -62,15 +62,15 @@ class QueryAnalysis(BaseModel):
     #     """
     # )
 
-    sources: List[Literal["IPCC", "IPBES", "IPOS","OpenAlex"]] = Field(
+    sources: List[Literal["IPCC", "IPBES", "IPOS"]] = Field( #,"OpenAlex"]] = Field(
         ...,
         description="""
             Given a user question choose which documents would be most relevant for answering their question,
             - IPCC is for questions about climate change, energy, impacts, and everything we can find the IPCC reports
             - IPBES is for questions about biodiversity and nature
             - IPOS is for questions about the ocean and deep sea mining
-            - OpenAlex is for any other questions that are not in the previous categories but could be found in the scientific litterature 
         """,
+            # - OpenAlex is for any other questions that are not in the previous categories but could be found in the scientific litterature 
     )
     # topics: List[Literal[
     #     "Climate change",
