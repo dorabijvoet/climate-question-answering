@@ -56,7 +56,7 @@ def make_intent_categorization_node(llm):
     categorization_chain = make_intent_categorization_chain(llm)
 
     def categorize_message(state):
-        output = categorization_chain.invoke({"input":state["user_input"]})
+        output = categorization_chain.invoke({"input": state["user_input"]})
         if "language" not in output: output["language"] = "English"
         output["query"] = state["user_input"]
         return output

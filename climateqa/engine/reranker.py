@@ -6,7 +6,7 @@ from sentence_transformers import CrossEncoder
 
 load_dotenv()
 
-def get_reranker(model = "jina",cohere_api_key = None):
+def get_reranker(model = "jina", cohere_api_key = None):
     
     assert model in ["nano","tiny","small","large", "jina"]
 
@@ -21,8 +21,10 @@ def get_reranker(model = "jina",cohere_api_key = None):
             cohere_api_key = os.environ["COHERE_API_KEY"]
         reranker = Reranker("cohere", lang='en', api_key = cohere_api_key)
     elif model == "jina":
-        # reranker = Reranker("jina", api_key = os.getenv("JINA_RERANKER_API_KEY"))
-        reranker = CrossEncoder("jinaai/jina-reranker-v2-base-multilingual", automodel_args={"torch_dtype": "auto"}, trust_remote_code=True,)
+        # Reached token quota so does not work
+        reranker = Reranker("jina-reranker-v2-base-multilingual", api_key = os.getenv("JINA_RERANKER_API_KEY"))
+        # marche pas sans gpu ? et anyways returns with another structure donc faudrait changer le code du retriever node
+        # reranker = CrossEncoder("jinaai/jina-reranker-v2-base-multilingual", automodel_args={"torch_dtype": "auto"}, trust_remote_code=True,)
     return reranker
 
 
