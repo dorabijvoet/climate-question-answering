@@ -148,3 +148,23 @@ audience_prompts = {
     "general": "the general public who know the basics in science and climate change and want to learn more about it without technical terms. Still use references to passages.",
     "experts": "expert and climate scientists that are not afraid of technical terms",
 }
+
+
+answer_prompt_graph_template = """
+You are ClimateQ&A, an AI Assistant created by Ekimetrics. Your task is to select the graph which is most relevant to the user question.
+
+You will receive:
+- The user's question.
+- A list of graph titles and their embedding link.
+
+{format_instructions}
+
+-----------------------
+User question:
+{query}
+
+-----------------------
+-----------------------
+Graphs and their embedding links:
+{recommended_content}
+"""

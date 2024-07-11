@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from ..reranker import rerank_docs
 from ..graph_retriever import GraphRetriever
-
+from ...utils import remove_duplicates_keep_highest_score
 
 
 def divide_into_parts(target, parts):
@@ -107,13 +107,15 @@ def make_graph_retriever_node(vectorstore, reranker, rerank_by_question=True, k_
                         doc.metadata["sources_used"] = sources
                     
                     print(f"{len(docs_question)} graphs retrieved for subquestion {i + 1}: {docs_question}")
-                    
-                    # Add to the list of docs
+
                     docs.extend(docs_question)
 
                 else:
                     print(f"There are no graphs which match the sources filtered on. Sources filtered on: {sources}. Sources available: {POSSIBLE_SOURCES}.")
                     
+                # Remove duplicates and keep the duplicate document with the highest reranking score
+                docs = remove_duplicates_keep_highest_score(docs)
+
                 # Sorting the list in descending order by rerank_score
                 # Then select the top k
                 docs = sorted(docs, key=lambda x: x.metadata["reranking_score"], reverse=True)
