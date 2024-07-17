@@ -87,7 +87,7 @@ user_id = create_user_id()
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
 llm = get_llm(provider="openai",max_tokens = 1024,temperature = 0.0)
-reranker = get_reranker("large")
+reranker = get_reranker("nano")
 agent = make_graph_agent(llm,vectorstore,reranker)
 
 
