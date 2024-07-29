@@ -5,3 +5,5 @@ __pycache__/utils.cpython-38.pyc
 
 notebooks/
 *.pyc
+
+.history
