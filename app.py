@@ -131,12 +131,14 @@ async def chat(query,history,audience,sources,reports):
     # path_answer = "/logs/answer/streamed_output_str/-"
 
     docs = []
+    graphs = []
     docs_html = ""
     output_query = ""
     output_language = ""
     output_keywords = ""
     gallery = []
     start_streaming = False
+    intent = None
 
     steps_display = {
         "categorize_intent":("🔄️ Analyzing user message",True),
@@ -147,7 +149,7 @@ async def chat(query,history,audience,sources,reports):
     try:
         async for event in result:
 
-            if event["event"] == "on_chat_model_stream" and event["metadata"]["langgraph_node"] == "answer_rag":
+            if event["event"] == "on_chat_model_stream" and event["metadata"]["langgraph_node"] in ["answer_rag", "answer_chitchat", "answer_ai_impact"]:
                 if start_streaming == False:
                     start_streaming = True
                     history[-1] = (query,"")
@@ -159,7 +161,6 @@ async def chat(query,history,audience,sources,reports):
                 answer_yet = previous_answer + new_token
                 answer_yet = parse_output_llm_with_sources(answer_yet)
                 history[-1] = (query,answer_yet)
-
             
             elif event["name"] == "retrieve_documents" and event["event"] == "on_chain_end":
                 try:
@@ -178,6 +179,13 @@ async def chat(query,history,audience,sources,reports):
             #     questions = "\n".join([f"{i+1}. {q['question']} ({q['source']})" for i,q in enumerate(questions)])
             #     answer_yet = "🔄️ Searching in the knowledge base\n{questions}"
             #     history[-1] = (query,answer_yet)
+
+            elif event["name"] == "retrieve_graphs" and event["event"] == "on_chain_end":
+                try:
+                    graphs = event["data"]["output"]["recommended_content"]
+                except Exception as e:
+                    print(f"Error getting graphs: {e}")
+                    print(event)
 
 
             for event_name,(event_description,display_output) in steps_display.items():
@@ -210,7 +218,7 @@ async def chat(query,history,audience,sources,reports):
 
 
             history = [tuple(x) for x in history]
-            yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords
+            yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords,graphs
 
     except Exception as e:
         raise gr.Error(f"{e}")
@@ -278,7 +286,7 @@ async def chat(query,history,audience,sources,reports):
     #     gallery = list(set("|".join(gallery).split("|")))
     #     gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
-    yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords
+    yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords,graphs
 
 
 
