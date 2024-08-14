@@ -138,7 +138,6 @@ async def chat(query,history,audience,sources,reports):
     output_keywords = ""
     gallery = []
     start_streaming = False
-    intent = None
 
     steps_display = {
         "categorize_intent":("🔄️ Analyzing user message",True),
@@ -169,6 +168,8 @@ async def chat(query,history,audience,sources,reports):
                     for i, d in enumerate(docs, 1):
                         docs_html.append(make_html_source(d, i))
                     docs_html = "".join(docs_html)
+
+                    print(docs_html)
                 except Exception as e:
                     print(f"Error getting documents: {e}")
                     print(event)
@@ -182,7 +183,17 @@ async def chat(query,history,audience,sources,reports):
 
             elif event["name"] == "retrieve_graphs" and event["event"] == "on_chain_end":
                 try:
-                    graphs = event["data"]["output"]["recommended_content"]
+                    recommended_content = event["data"]["output"]["recommended_content"]
+                    graphs = [
+                        {
+                            "embedding": x.metadata["returned_content"],
+                            "metadata": {
+                                "source": x.metadata["source"],
+                                "category": x.metadata["category"]
+                                }
+                                } for x in recommended_content if x.metadata["source"] == "OWID"
+                                ]
+                    
                 except Exception as e:
                     print(f"Error getting graphs: {e}")
                     print(event)
@@ -218,7 +229,7 @@ async def chat(query,history,audience,sources,reports):
 
 
             history = [tuple(x) for x in history]
-            yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords,graphs
+            yield history,docs_html,output_query,output_language,gallery,graphs,output_query,output_keywords
 
     except Exception as e:
         raise gr.Error(f"{e}")
@@ -286,7 +297,7 @@ async def chat(query,history,audience,sources,reports):
     #     gallery = list(set("|".join(gallery).split("|")))
     #     gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
-    yield history,docs_html,output_query,output_language,gallery,output_query,output_keywords,graphs
+    yield history,docs_html,output_query,output_language,gallery,graphs,output_query,output_keywords
 
 
 
@@ -411,6 +422,39 @@ Hello, I am ClimateQ&A, a conversational assistant designed to help you understa
 What do you want to learn ?
 """
 
+# The list of graphs
+graphs = [
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'Fossil Fuels'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-land?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+    {'embedding': '<iframe src="https://ourworldindata.org/grapher/total-ghg-emissions?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}}
+]
+
+# Organize graphs by category
+categories = {}
+for graph in graphs:
+    category = graph['metadata']['category']
+    if category not in categories:
+        categories[category] = []
+    categories[category].append(graph['embedding'])
+
+
 
 def vote(data: gr.LikeData):
     if data.liked:
@@ -509,9 +553,14 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
-                    with gr.Tab("Recommended content",elem_id = "tab-recommended_content",id = 3):
-                        gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
-
+                    with gr.Tab("Recommended content", elem_id="tab-recommended_content", id=3) as recommended_content_tab:
+                        with gr.Tabs():
+                            for category, embeddings in categories.items():
+                                with gr.Tab(category):
+                                    with gr.Row():
+                                        for embedding in embeddings:
+                                            with gr.Column(scale=1):  # Each graph gets its own column
+                                                gr.HTML(embedding)
 
 #---------------------------------------------------------------------------------------
 # OTHER TABS
@@ -552,15 +601,40 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     def start_chat(query,history):
         history = history + [(query,None)]
         history = [tuple(x) for x in history]
-        return (gr.update(interactive = False),gr.update(selected=1),history)
+        return (gr.update(interactive = False),gr.update(selected=3),history)
     
     def finish_chat():
         return (gr.update(interactive = True,value = ""))
+    
+    # Function to organize and display graphs in the "Recommended content" tab
+    def display_graphs(graphs):
+        if not graphs:  # Check if the graphs list is empty
+            # If empty, return a simple HTML message indicating no content
+            return gr.HTML("<p>No recommended content available at the moment.</p>")
+        
+        # Organize graphs by category
+        categories = {}
+        for graph in graphs:
+            category = graph['metadata']['category']
+            if category not in categories:
+                categories[category] = []
+            categories[category].append(graph['embedding'])
+
+        # Create the Gradio interface for the graphs
+        with gr.Tabs() as tabs:
+            for category, embeddings in categories.items():
+                with gr.Tab(category):
+                    with gr.Row():
+                        for embedding in embeddings:
+                            with gr.Column(scale=1):  # Each graph gets its own column
+                                gr.HTML(embedding)
+        return tabs
 
     (textbox
         .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
         .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_textbox")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
+        # .then(display_graphs, [graphs_placeholder], [graphs_placeholder], api_name="update_graphs")
     )
 
     (examples_hidden

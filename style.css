@@ -465,3 +465,17 @@ span.chatbot > p > img{
   .score-orange{
     color:red !important;
   }
+
+/* Additional style for scrollable tab content */
+div#tab-recommended_content {
+    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 80vh; /* Adjust height as needed */
+}
+
+/* Mobile specific adjustments */
+@media screen and (max-width: 767px) {
+    div#tab-recommended_content {
+        max-height: 50vh; /* Reduce height for smaller screens */
+        overflow-y: auto;
+    }
+}
