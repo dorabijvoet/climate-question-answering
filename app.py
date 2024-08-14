@@ -25,7 +25,7 @@ from azure.storage.fileshare import ShareServiceClient
 
 from utils import create_user_id
 
-
+from langchain_chroma import Chroma
 
 # ClimateQ&A imports
 from climateqa.engine.llm import get_llm
@@ -40,6 +40,7 @@ from climateqa.utils import get_image_from_azure_blob_storage
 from climateqa.engine.keywords import make_keywords_chain
 # from climateqa.engine.chains.answer_rag import make_rag_papers_chain
 from climateqa.engine.graph import make_graph_agent,display_graph
+from climateqa.engine.embeddings import get_embeddings_function
 
 from front.utils import make_html_source,parse_output_llm_with_sources,serialize_docs,make_toolbox
 
@@ -49,6 +50,7 @@ try:
     load_dotenv()
 except Exception as e:
     pass
+
 
 # Set up Gradio Theme
 theme = gr.themes.Base(
@@ -83,12 +85,16 @@ share_client = service.get_share_client(file_share_name)
 user_id = create_user_id()
 
 
+embeddings_function = get_embeddings_function()
+llm = get_llm(provider="openai",max_tokens = 1024,temperature = 0.0)
+reranker = get_reranker("nano")
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
-llm = get_llm(provider="openai",max_tokens = 1024,temperature = 0.0)
-reranker = get_reranker("nano")
-agent = make_graph_agent(llm,vectorstore,reranker)
+vectorstore_graphs = Chroma(persist_directory="/home/dora/climate-question-answering/data/vectorstore", embedding_function=embeddings_function)
+
+# agent = make_graph_agent(llm,vectorstore,reranker)
+agent = make_graph_agent(llm=llm, vectorstore_ipcc=vectorstore, vectorstore_graphs=vectorstore_graphs, reranker=reranker)
 
 
 
@@ -468,7 +474,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                     # with Modal(visible = False) as config_modal:
                     with gr.Tab("Configuration",elem_id = "tab-config",id = 2):
 
-                        gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
+                        gr.Markdown("Reminders: You can talk in any language, ClimateQ&A is multi-lingual!")
 
 
                         dropdown_sources = gr.CheckboxGroup(
@@ -496,6 +502,8 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
+                    with gr.Tab("Recommended content",elem_id = "tab-recommended_content",id = 3):
+                        gr.Markdown("Reminder: You can talk in any language, ClimateQ&A is multi-lingual!")
 
 
 #---------------------------------------------------------------------------------------

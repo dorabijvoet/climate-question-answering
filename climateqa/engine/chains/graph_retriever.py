@@ -88,6 +88,8 @@ def make_graph_retriever_node(vectorstore, reranker, rerank_by_question=True, k_
                         threshold = 0.5,
                         )
                     docs_question = retriever.get_relevant_documents(question)
+
+                    print(f"Retrieved documents:\n {docs_question}")
                     
                     # Rerank
                     if reranker is not None:
