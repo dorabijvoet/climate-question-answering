@@ -97,8 +97,6 @@ vectorstore_graphs = Chroma(persist_directory="/home/dora/climate-question-answe
 agent = make_graph_agent(llm=llm, vectorstore_ipcc=vectorstore, vectorstore_graphs=vectorstore_graphs, reranker=reranker)
 
 
-
-
 async def chat(query,history,audience,sources,reports):
     """taking a query and a message history, use a pipeline (reformulation, retriever, answering) to yield a tuple of:
     (messages in gradio format, messages in langchain format, source documents)"""
@@ -123,6 +121,7 @@ async def chat(query,history,audience,sources,reports):
         reports = []
     
     inputs = {"user_input": query,"audience": audience_prompt,"sources":sources}
+    print(f"\n\nInputs:\n {inputs}\n\n")
     result = agent.astream_events(inputs,version = "v1") #{"callbacks":[MyCustomAsyncHandler()]})
     # result = rag_chain.stream(inputs)
 
@@ -148,7 +147,7 @@ async def chat(query,history,audience,sources,reports):
     try:
         async for event in result:
 
-            if event["event"] == "on_chat_model_stream":
+            if event["event"] == "on_chat_model_stream" and event["metadata"]["langgraph_node"] == "answer_rag":
                 if start_streaming == False:
                     start_streaming = True
                     history[-1] = (query,"")
