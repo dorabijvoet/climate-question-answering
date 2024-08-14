@@ -131,7 +131,7 @@ async def chat(query,history,audience,sources,reports):
     # path_answer = "/logs/answer/streamed_output_str/-"
 
     docs = []
-    graphs = []
+    graphs_html = ""
     docs_html = ""
     output_query = ""
     output_language = ""
@@ -194,6 +194,22 @@ async def chat(query,history,audience,sources,reports):
                                 } for x in recommended_content if x.metadata["source"] == "OWID"
                                 ]
                     
+                    categories = {}
+                    for graph in graphs:
+                        category = graph['metadata']['category']
+                        if category not in categories:
+                            categories[category] = []
+                        categories[category].append(graph['embedding'])
+
+                    # Build the HTML content for the graphs
+                    graphs_html = ""
+                    for category, embeddings in categories.items():
+                        graphs_html += f"<h3>{category}</h3>"
+                        for embedding in embeddings:
+                            graphs_html += f"<div>{embedding}</div>"
+                    
+                    print(f"\n\nGraphs:\n{graphs_html}")
+                    
                 except Exception as e:
                     print(f"Error getting graphs: {e}")
                     print(event)
@@ -229,7 +245,7 @@ async def chat(query,history,audience,sources,reports):
 
 
             history = [tuple(x) for x in history]
-            yield history,docs_html,output_query,output_language,gallery,graphs,output_query,output_keywords
+            yield history,docs_html,output_query,output_language,gallery,graphs_html,output_query,output_keywords
 
     except Exception as e:
         raise gr.Error(f"{e}")
@@ -292,12 +308,14 @@ async def chat(query,history,audience,sources,reports):
         history[-1] = (history[-1][0],answer_yet)
         history = [tuple(x) for x in history]
 
+        print(f"\n\nImages:\n{gallery}")
+
     # gallery = [x.metadata["image_path"] for x in docs if (len(x.metadata["image_path"]) > 0 and "IAS" in x.metadata["image_path"])]
     # if len(gallery) > 0:
     #     gallery = list(set("|".join(gallery).split("|")))
     #     gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
-    yield history,docs_html,output_query,output_language,gallery,graphs,output_query,output_keywords
+    yield history,docs_html,output_query,output_language,gallery,graphs_html,output_query,output_keywords
 
 
 
@@ -422,37 +440,29 @@ Hello, I am ClimateQ&A, a conversational assistant designed to help you understa
 What do you want to learn ?
 """
 
-# The list of graphs
-graphs = [
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'Fossil Fuels'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-land?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-    {'embedding': '<iframe src="https://ourworldindata.org/grapher/total-ghg-emissions?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-     'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}}
-]
-
-# Organize graphs by category
-categories = {}
-for graph in graphs:
-    category = graph['metadata']['category']
-    if category not in categories:
-        categories[category] = []
-    categories[category].append(graph['embedding'])
+# # The list of graphs
+# graphs = [
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'Fossil Fuels'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-land?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
+#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/total-ghg-emissions?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
+#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}}
+# ]
 
 
 
@@ -520,7 +530,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
                     with gr.Tab("Sources",elem_id = "tab-citations",id = 1):
                         sources_textbox = gr.HTML(show_label=False, elem_id="sources-textbox")
-                        docs_textbox = gr.State("")
+                        # docs_textbox = gr.State("")
 
                     # with Modal(visible = False) as config_modal:
                     with gr.Tab("Configuration",elem_id = "tab-config",id = 2):
@@ -554,13 +564,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
                     with gr.Tab("Recommended content", elem_id="tab-recommended_content", id=3) as recommended_content_tab:
-                        with gr.Tabs():
-                            for category, embeddings in categories.items():
-                                with gr.Tab(category):
-                                    with gr.Row():
-                                        for embedding in embeddings:
-                                            with gr.Column(scale=1):  # Each graph gets its own column
-                                                gr.HTML(embedding)
+                        graphs_placeholder = gr.HTML(show_label=False, elem_id="graphs-placeholder")
 
 #---------------------------------------------------------------------------------------
 # OTHER TABS
@@ -601,45 +605,21 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     def start_chat(query,history):
         history = history + [(query,None)]
         history = [tuple(x) for x in history]
-        return (gr.update(interactive = False),gr.update(selected=3),history)
+        return (gr.update(interactive = False),gr.update(selected=3),history) #,gr.update(selected=1) to select the sources tab by default when a question is submitted
     
     def finish_chat():
         return (gr.update(interactive = True,value = ""))
     
-    # Function to organize and display graphs in the "Recommended content" tab
-    def display_graphs(graphs):
-        if not graphs:  # Check if the graphs list is empty
-            # If empty, return a simple HTML message indicating no content
-            return gr.HTML("<p>No recommended content available at the moment.</p>")
-        
-        # Organize graphs by category
-        categories = {}
-        for graph in graphs:
-            category = graph['metadata']['category']
-            if category not in categories:
-                categories[category] = []
-            categories[category].append(graph['embedding'])
-
-        # Create the Gradio interface for the graphs
-        with gr.Tabs() as tabs:
-            for category, embeddings in categories.items():
-                with gr.Tab(category):
-                    with gr.Row():
-                        for embedding in embeddings:
-                            with gr.Column(scale=1):  # Each graph gets its own column
-                                gr.HTML(embedding)
-        return tabs
-
+    
     (textbox
         .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
-        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_textbox")
+        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component, graphs_placeholder],concurrency_limit = 8,api_name = "chat_textbox")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
-        # .then(display_graphs, [graphs_placeholder], [graphs_placeholder], api_name="update_graphs")
     )
 
     (examples_hidden
         .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
-        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_examples")
+        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component, graphs_placeholder],concurrency_limit = 8,api_name = "chat_examples")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
     )
 
