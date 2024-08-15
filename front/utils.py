@@ -33,6 +33,85 @@ def parse_output_llm_with_sources(output):
     return content_parts
 
 
+from collections import defaultdict
+
+def generate_html_graphs(graphs):
+    # Organize graphs by category
+    categories = defaultdict(list)
+    for graph in graphs:
+        category = graph['metadata']['category']
+        categories[category].append(graph['embedding'])
+
+    # Begin constructing the HTML
+    html_code = '''
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Graphs by Category</title>
+                    <style>
+                        .tab-content {
+                            display: none;
+                        }
+                        .tab-content.active {
+                            display: block;
+                        }
+                        .tabs {
+                            margin-bottom: 20px;
+                        }
+                        .tab-button {
+                            background-color: #ddd;
+                            border: none;
+                            padding: 10px 20px;
+                            cursor: pointer;
+                            margin-right: 5px;
+                        }
+                        .tab-button.active {
+                            background-color: #ccc;
+                        }
+                    </style>
+                    <script>
+                        function showTab(tabId) {
+                            var contents = document.getElementsByClassName('tab-content');
+                            var buttons = document.getElementsByClassName('tab-button');
+                            for (var i = 0; i < contents.length; i++) {
+                                contents[i].classList.remove('active');
+                                buttons[i].classList.remove('active');
+                            }
+                            document.getElementById(tabId).classList.add('active');
+                            document.querySelector('button[data-tab="'+tabId+'"]').classList.add('active');
+                        }
+                    </script>
+                </head>
+                <body>
+                    <div class="tabs">
+                '''
+
+    # Add buttons for each category
+    for i, category in enumerate(categories.keys()):
+        active_class = 'active' if i == 0 else ''
+        html_code += f'<button class="tab-button {active_class}" onclick="showTab(\'tab-{i}\')" data-tab="tab-{i}">{category}</button>'
+
+    html_code += '</div>'
+
+    # Add content for each category
+    for i, (category, embeds) in enumerate(categories.items()):
+        active_class = 'active' if i == 0 else ''
+        html_code += f'<div id="tab-{i}" class="tab-content {active_class}">'
+        for embed in embeds:
+            html_code += embed
+        html_code += '</div>'
+
+    html_code += '''
+                </body>
+                </html>
+                '''
+
+    return html_code
+
+
+
 def make_html_source(source,i):
     meta = source.metadata
     # content = source.page_content.split(":",1)[1].strip()

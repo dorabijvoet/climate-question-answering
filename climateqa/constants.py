@@ -43,3 +43,24 @@ POSSIBLE_REPORTS = [
     "IPBES IAS A C6",
     "IPBES IAS A SPM"
 ]
+
+OWID_CATEGORIES = ['Access to Energy', 'Agricultural Production',
+       'Agricultural Regulation & Policy', 'Air Pollution',
+       'Animal Welfare', 'Antibiotics', 'Biodiversity', 'Biofuels',
+       'Biological & Chemical Weapons', 'CO2 & Greenhouse Gas Emissions',
+       'COVID-19', 'Clean Water', 'Clean Water & Sanitation',
+       'Climate Change', 'Crop Yields', 'Diet Compositions',
+       'Electricity', 'Electricity Mix', 'Energy', 'Energy Efficiency',
+       'Energy Prices', 'Environmental Impacts of Food Production',
+       'Environmental Protection & Regulation', 'Famines', 'Farm Size',
+       'Fertilizers', 'Fish & Overfishing', 'Food Supply', 'Food Trade',
+       'Food Waste', 'Food and Agriculture', 'Forests & Deforestation',
+       'Fossil Fuels', 'Future Population Growth',
+       'Hunger & Undernourishment', 'Indoor Air Pollution', 'Land Use',
+       'Land Use & Yields in Agriculture', 'Lead Pollution',
+       'Meat & Dairy Production', 'Metals & Minerals',
+       'Natural Disasters', 'Nuclear Energy', 'Nuclear Weapons',
+       'Oil Spills', 'Outdoor Air Pollution', 'Ozone Layer', 'Pandemics',
+       'Pesticides', 'Plastic Pollution', 'Renewable Energy', 'Soil',
+       'Transport', 'Urbanization', 'Waste Management', 'Water Pollution',
+       'Water Use & Stress', 'Wildfires']

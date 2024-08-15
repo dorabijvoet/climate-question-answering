@@ -1,6 +1,8 @@
 import gradio as gr
+import random
+from collections import defaultdict
 
-# The list of graphs
+# List of graphs
 graphs = [
     {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
@@ -24,23 +26,40 @@ graphs = [
      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}}
 ]
 
-# Organize graphs by category
-categories = {}
-for graph in graphs:
-    category = graph['metadata']['category']
-    if category not in categories:
-        categories[category] = []
-    categories[category].append(graph['embedding'])
+# Function to randomly select several graphs and organize them by category
+def get_graphs_by_category(num_graphs=3):
+    selected_graphs = random.sample(graphs, num_graphs)
+    graphs_by_category = defaultdict(list)
+    
+    # Organize graphs by category
+    for graph in selected_graphs:
+        category = graph['metadata']['category']
+        graphs_by_category[category].append(graph['embedding'])
+    
+    return graphs_by_category
 
-# Create the Gradio interface
+# Gradio interface
 with gr.Blocks() as demo:
-    with gr.Tabs():
-        for category, embeddings in categories.items():
-            with gr.Tab(category):
-                with gr.Row():
-                    for embedding in embeddings:
-                        with gr.Column(scale=1):  # Each graph gets its own column
-                            gr.HTML(embedding)
+    gr.Markdown("## Random Graph Viewer by Category")
+    button = gr.Button("Show Random Graphs")
+    
+    # Create tabs for each possible category
+    with gr.Tabs() as tabs:
+        graph_displays = {}
 
-# Launch the interface
+        for category in set(graph['metadata']['category'] for graph in graphs):
+            with gr.Tab(category):
+                graph_displays[category] = gr.HTML()
+
+    def update_graphs():
+        graphs_by_category = get_graphs_by_category(5)  # Adjust the number as needed
+        updates = {}
+        for category, graphs in graphs_by_category.items():
+            embeddings = "\n".join(graphs)
+            updates[graph_displays[category]] = embeddings
+        return updates
+    
+    button.click(fn=update_graphs, outputs=[graph_displays[category] for category in graph_displays])
+
+# Launch the app
 demo.launch()

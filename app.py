@@ -35,14 +35,14 @@ from climateqa.engine.reranker import get_reranker
 from climateqa.engine.embeddings import get_embeddings_function
 from climateqa.engine.chains.prompts import audience_prompts
 from climateqa.sample_questions import QUESTIONS
-from climateqa.constants import POSSIBLE_REPORTS
+from climateqa.constants import POSSIBLE_REPORTS, OWID_CATEGORIES
 from climateqa.utils import get_image_from_azure_blob_storage
 from climateqa.engine.keywords import make_keywords_chain
 # from climateqa.engine.chains.answer_rag import make_rag_papers_chain
 from climateqa.engine.graph import make_graph_agent,display_graph
 from climateqa.engine.embeddings import get_embeddings_function
 
-from front.utils import make_html_source,parse_output_llm_with_sources,serialize_docs,make_toolbox
+from front.utils import make_html_source,parse_output_llm_with_sources,serialize_docs,make_toolbox,generate_html_graphs
 
 # Load environment variables in local mode
 try:
@@ -95,7 +95,6 @@ vectorstore_graphs = Chroma(persist_directory="/home/dora/climate-question-answe
 
 # agent = make_graph_agent(llm,vectorstore,reranker)
 agent = make_graph_agent(llm=llm, vectorstore_ipcc=vectorstore, vectorstore_graphs=vectorstore_graphs, reranker=reranker)
-
 
 async def chat(query,history,audience,sources,reports):
     """taking a query and a message history, use a pipeline (reformulation, retriever, answering) to yield a tuple of:
@@ -193,27 +192,9 @@ async def chat(query,history,audience,sources,reports):
                                 }
                                 } for x in recommended_content if x.metadata["source"] == "OWID"
                                 ]
-                    
-                    categories = {}
-                    for graph in graphs:
-                        category = graph['metadata']['category']
-                        if category not in categories:
-                            categories[category] = []
-                        categories[category].append(graph['embedding'])
-
-                    # Build the HTML content for the graphs
-                    graphs_html = ""
-                    for category, embeddings in categories.items():
-                        graphs_html += f"<h3>{category}</h3>"
-                        for embedding in embeddings:
-                            graphs_html += f"<div>{embedding}</div>"
-                    
-                    print(f"\n\nGraphs:\n{graphs_html}")
-                    
+                                                
                 except Exception as e:
                     print(f"Error getting graphs: {e}")
-                    print(event)
-
 
             for event_name,(event_description,display_output) in steps_display.items():
                 if event["name"] == event_name:
@@ -245,7 +226,8 @@ async def chat(query,history,audience,sources,reports):
 
 
             history = [tuple(x) for x in history]
-            yield history,docs_html,output_query,output_language,gallery,graphs_html,output_query,output_keywords
+            yield history,docs_html,output_query,output_language,gallery,graphs#,output_query,output_keywords
+
 
     except Exception as e:
         raise gr.Error(f"{e}")
@@ -315,7 +297,7 @@ async def chat(query,history,audience,sources,reports):
     #     gallery = list(set("|".join(gallery).split("|")))
     #     gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
-    yield history,docs_html,output_query,output_language,gallery,graphs_html,output_query,output_keywords
+        yield history,docs_html,output_query,output_language,gallery,graphs#,output_query,output_keywords
 
 
 
@@ -563,9 +545,13 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
-                    with gr.Tab("Recommended content", elem_id="tab-recommended_content", id=3) as recommended_content_tab:
-                        graphs_placeholder = gr.HTML(show_label=False, elem_id="graphs-placeholder")
-
+                    with gr.Tab("Recommended content", elem_id="tab-recommended_content", id=3) as recommended_content_tab:        
+                        gr.HTML("Select a category.")
+                        tabs_dict = {}
+                        for category in OWID_CATEGORIES:
+                            tab_id = category.lower().replace(' ', '-')
+                            with gr.Tab(category, elem_id=f"tab-{tab_id}", id=tab_id) as tabs_dict[tab_id]:
+                                category_placeholder = gr.HTML("There are no graphs in this category to display at the moment. Try asking another question.")
 #---------------------------------------------------------------------------------------
 # OTHER TABS
 #---------------------------------------------------------------------------------------
@@ -613,13 +599,13 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     
     (textbox
         .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
-        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component, graphs_placeholder],concurrency_limit = 8,api_name = "chat_textbox")
+        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_textbox")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
     )
 
     (examples_hidden
         .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
-        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component, graphs_placeholder],concurrency_limit = 8,api_name = "chat_examples")
+        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_examples")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
     )
 
