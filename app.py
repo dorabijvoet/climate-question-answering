@@ -115,7 +115,7 @@ async def chat(query,history,audience,sources,reports,current_graphs):
 
     # Prepare default values
     if sources is None or len(sources) == 0:
-        sources = ["IPCC"]
+        sources = ["IPCC", "IPBES", "IPOS"]
 
     if reports is None or len(reports) == 0:
         reports = []
@@ -188,19 +188,37 @@ async def chat(query,history,audience,sources,reports,current_graphs):
             elif event["name"] == "retrieve_graphs" and event["event"] == "on_chain_end":
                 try:
                     recommended_content = event["data"]["output"]["recommended_content"]
-                    graphs = [
-                        {
-                            "embedding": x.metadata["returned_content"],
-                            "metadata": {
-                                "source": x.metadata["source"],
-                                "category": x.metadata["category"]
-                                }
-                                } for x in recommended_content if x.metadata["source"] == "OWID"
-                                ]
+                    # graphs = [
+                    #     {
+                    #         "embedding": x.metadata["returned_content"],
+                    #         "metadata": {
+                    #             "source": x.metadata["source"],
+                    #             "category": x.metadata["category"]
+                    #             }
+                    #             } for x in recommended_content if x.metadata["source"] == "OWID"
+                    #             ]
                     
+                    unique_graphs = []
+                    seen_embeddings = set()
+
+                    for x in recommended_content:
+                        embedding = x.metadata["returned_content"]
+                        
+                        # Check if the embedding has already been seen
+                        if embedding not in seen_embeddings:
+                            unique_graphs.append({
+                                "embedding": embedding,
+                                "metadata": {
+                                    "source": x.metadata["source"],
+                                    "category": x.metadata["category"]
+                                }
+                            })
+                            # Add the embedding to the seen set
+                            seen_embeddings.add(embedding)
+
     
                     categories = {}
-                    for graph in graphs:
+                    for graph in unique_graphs:
                         category = graph['metadata']['category']
                         if category not in categories:
                             categories[category] = []
@@ -524,7 +542,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         dropdown_sources = gr.CheckboxGroup(
                             ["IPCC", "IPBES","IPOS"],
                             label="Select source",
-                            value=["IPCC"],
+                            value=["IPCC", "IPBES","IPOS"],
                             interactive=True,
                         )
 
@@ -647,4 +665,4 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
     demo.queue()
 
-demo.launch()
+demo.launch(debug=True)

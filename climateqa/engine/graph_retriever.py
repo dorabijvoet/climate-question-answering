@@ -7,7 +7,7 @@ from typing import List
 
 class GraphRetriever(BaseRetriever):
     vectorstore:VectorStore
-    sources:list = ["IEA", "OWID"] # plus tard ajouter OurWorldInData # faudra integrate avec l'autre retriever
+    sources:list = ["OWID"] # plus tard ajouter OurWorldInData # faudra integrate avec l'autre retriever
     threshold:float = 0.5
     k_total:int = 10
 
@@ -18,7 +18,7 @@ class GraphRetriever(BaseRetriever):
         # Check if all elements in the list are IEA or OWID
         assert isinstance(self.sources,list)
         assert self.sources
-        assert any([x in ["IEA", "OWID"] for x in self.sources])
+        assert any([x in ["OWID"] for x in self.sources])
 
         # Prepare base search kwargs
         filters = {}
@@ -30,9 +30,17 @@ class GraphRetriever(BaseRetriever):
         # Filter if scores are below threshold
         docs = [x for x in docs if x[1] > self.threshold]
 
+        # Remove duplicate documents
+        unique_docs = []
+        seen_docs = []
+        for i, doc in enumerate(docs):
+            if doc[0].page_content not in seen_docs:
+                unique_docs.append(doc)
+                seen_docs.append(doc[0].page_content)
+
         # Add score to metadata
         results = []
-        for i,(doc,score) in enumerate(docs):
+        for i,(doc,score) in enumerate(unique_docs):
             doc.metadata["similarity_score"] = score
             doc.metadata["content"] = doc.page_content
             results.append(doc)

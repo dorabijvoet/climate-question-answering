@@ -1,19 +1,37 @@
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
+from typing import List
+from langchain_core.documents.base import Document
 from langchain_openai import ChatOpenAI
 
 from climateqa.engine.chains.prompts import answer_prompt_graph_template
 
-class RecommendedGraph(BaseModel):
-    title: str = Field(description="Title of the graph")
-    embedding: str = Field(description="Embedding link of the graph")
+# class RecommendedGraph(BaseModel):
+#     title: str = Field(description="Title of the graph")
+#     embedding: str = Field(description="Embedding link of the graph")
+
 
 # class RecommendedGraphs(BaseModel):
 #     recommended_content: List[RecommendedGraph] = Field(description="List of recommended graphs")
 
+# def make_rag_graph_chain(llm):
+#     parser = JsonOutputParser(pydantic_object=RecommendedGraph)
+#     prompt = PromptTemplate(
+#         template=answer_prompt_graph_template,
+#         input_variables=["query", "recommended_content"],
+#         partial_variables={"format_instructions": parser.get_format_instructions()},
+#     )
+
+#     chain = prompt | llm | parser
+#     return chain
+
+
+class RecommendedGraphs(BaseModel):
+    graphs: List[Document] = Field(description="List of the relevant graphs.")
+
 def make_rag_graph_chain(llm):
-    parser = JsonOutputParser(pydantic_object=RecommendedGraph)
+    parser = JsonOutputParser(pydantic_object=RecommendedGraphs)
     prompt = PromptTemplate(
         template=answer_prompt_graph_template,
         input_variables=["query", "recommended_content"],
