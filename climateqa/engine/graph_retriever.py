@@ -17,6 +17,7 @@ class GraphRetriever(BaseRetriever):
 
         # Check if all elements in the list are IEA or OWID
         assert isinstance(self.sources,list)
+        assert self.sources
         assert any([x in ["IEA", "OWID"] for x in self.sources])
 
         # Prepare base search kwargs

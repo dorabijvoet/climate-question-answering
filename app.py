@@ -131,6 +131,7 @@ async def chat(query,history,audience,sources,reports,current_graphs):
     # path_answer = "/logs/answer/streamed_output_str/-"
 
     docs = []
+    docs_used = True
     docs_html = ""
     current_graphs = []
     output_query = ""
@@ -149,7 +150,7 @@ async def chat(query,history,audience,sources,reports,current_graphs):
     try:
         async for event in result:
 
-            if event["event"] == "on_chat_model_stream" and event["metadata"]["langgraph_node"] in ["answer_rag", "answer_chitchat", "answer_ai_impact"]:
+            if event["event"] == "on_chat_model_stream" and event["metadata"]["langgraph_node"] in ["answer_rag", "answer_rag_no_docs", "answer_chitchat", "answer_ai_impact"]:
                 if start_streaming == False:
                     start_streaming = True
                     history[-1] = (query,"")
@@ -161,8 +162,11 @@ async def chat(query,history,audience,sources,reports,current_graphs):
                 answer_yet = previous_answer + new_token
                 answer_yet = parse_output_llm_with_sources(answer_yet)
                 history[-1] = (query,answer_yet)
+
+                if docs_used is True and event["metadata"]["langgraph_node"] in ["answer_rag_no_docs", "answer_chitchat", "answer_ai_impact"]:
+                    docs_used = False
             
-            elif event["name"] == "retrieve_documents" and event["event"] == "on_chain_end":
+            elif docs_used is True and event["name"] == "retrieve_documents" and event["event"] == "on_chain_end":
                 try:
                     docs = event["data"]["output"]["documents"]
                     docs_html = []

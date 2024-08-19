@@ -28,6 +28,7 @@ class ClimateQARetriever(BaseRetriever):
 
         # Check if all elements in the list are either IPCC or IPBES
         assert isinstance(self.sources,list)
+        assert self.sources
         assert all([x in ["IPCC","IPBES","IPOS"] for x in self.sources])
         assert self.k_total > self.k_summary, "k_total should be greater than k_summary"
 

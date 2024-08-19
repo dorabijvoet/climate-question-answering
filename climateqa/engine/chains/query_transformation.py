@@ -143,6 +143,11 @@ def make_query_transform_node(llm):
         for question in new_state["questions"]:
             question_state = {"question":question}
             analysis_output = rewriter_chain.invoke({"input":question})
+            
+            # The case when the llm does not return any sources
+            if not analysis_output["sources"] or not all(source in ["IPCC", "IPBS", "IPOS"] for source in analysis_output["sources"]):
+                analysis_output["sources"] = ["IPCC", "IPBES", "IPOS"]
+
             question_state.update(analysis_output)
             questions.append(question_state)
         new_state["questions"] = questions
