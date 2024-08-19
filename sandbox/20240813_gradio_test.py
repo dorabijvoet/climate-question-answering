@@ -41,25 +41,42 @@ def get_graphs_by_category(num_graphs=3):
 # Gradio interface
 with gr.Blocks() as demo:
     gr.Markdown("## Random Graph Viewer by Category")
-    button = gr.Button("Show Random Graphs")
     
-    # Create tabs for each possible category
-    with gr.Tabs() as tabs:
-        graph_displays = {}
+    with gr.Tabs():
+        with gr.Tab("Current Graphs"):
+            checkbox_group = gr.CheckboxGroup(label="Select graphs to save", choices=[])
+            button = gr.Button("Show Random Graphs")
+            graph_display = gr.HTML()
+        
+        with gr.Tab("Saved Graphs"):
+            saved_graphs_display = gr.HTML()
 
-        for category in set(graph['metadata']['category'] for graph in graphs):
-            with gr.Tab(category):
-                graph_displays[category] = gr.HTML()
+    saved_graphs = []
 
-    def update_graphs():
+    def update_graphs(checked_graphs):
+        # Add selected graphs to saved graphs but keep them in current graphs
+        global saved_graphs
+        saved_graphs.extend([graph for graph in checked_graphs if graph not in saved_graphs])
+        
         graphs_by_category = get_graphs_by_category(5)  # Adjust the number as needed
-        updates = {}
+        all_graphs = []
         for category, graphs in graphs_by_category.items():
+            category_html = f"<h3 style='color: red; font-weight: bold; font-size: 24px;'>{category}</h3>"
             embeddings = "\n".join(graphs)
-            updates[graph_displays[category]] = embeddings
-        return updates
+            all_graphs.append(category_html + embeddings)
+        
+        # Combine newly generated graphs and previously kept graphs
+        all_graphs_html = "\n".join(all_graphs)
+        
+        # Update choices for CheckboxGroup
+        new_choices = [f"{cat}\n{graph}" for cat, graphs in graphs_by_category.items() for graph in graphs]
+        
+        # Update saved graphs HTML
+        saved_graphs_html = "\n".join(saved_graphs)
+        
+        return all_graphs_html, gr.CheckboxGroup.update(choices=new_choices), saved_graphs_html
     
-    button.click(fn=update_graphs, outputs=[graph_displays[category] for category in graph_displays])
+    button.click(fn=update_graphs, inputs=checkbox_group, outputs=[graph_display, checkbox_group, saved_graphs_display])
 
 # Launch the app
 demo.launch()

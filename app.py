@@ -26,6 +26,7 @@ from azure.storage.fileshare import ShareServiceClient
 from utils import create_user_id
 
 from langchain_chroma import Chroma
+from collections import defaultdict
 
 # ClimateQ&A imports
 from climateqa.engine.llm import get_llm
@@ -91,12 +92,12 @@ reranker = get_reranker("nano")
 
 # Create vectorstore and retriever
 vectorstore = get_pinecone_vectorstore(embeddings_function)
-vectorstore_graphs = Chroma(persist_directory="/home/dora/climate-question-answering/data/vectorstore", embedding_function=embeddings_function)
+vectorstore_graphs = Chroma(persist_directory="/home/dora/climate-question-answering/data/vectorstore_owid", embedding_function=embeddings_function)
 
 # agent = make_graph_agent(llm,vectorstore,reranker)
 agent = make_graph_agent(llm=llm, vectorstore_ipcc=vectorstore, vectorstore_graphs=vectorstore_graphs, reranker=reranker)
 
-async def chat(query,history,audience,sources,reports):
+async def chat(query,history,audience,sources,reports,current_graphs):
     """taking a query and a message history, use a pipeline (reformulation, retriever, answering) to yield a tuple of:
     (messages in gradio format, messages in langchain format, source documents)"""
 
@@ -113,10 +114,10 @@ async def chat(query,history,audience,sources,reports):
         audience_prompt = audience_prompts["experts"]
 
     # Prepare default values
-    if len(sources) == 0:
+    if sources is None or len(sources) == 0:
         sources = ["IPCC"]
 
-    if len(reports) == 0:
+    if reports is None or len(reports) == 0:
         reports = []
     
     inputs = {"user_input": query,"audience": audience_prompt,"sources":sources}
@@ -130,12 +131,13 @@ async def chat(query,history,audience,sources,reports):
     # path_answer = "/logs/answer/streamed_output_str/-"
 
     docs = []
-    graphs_html = ""
     docs_html = ""
+    current_graphs = []
     output_query = ""
     output_language = ""
     output_keywords = ""
     gallery = []
+    updates = []
     start_streaming = False
 
     steps_display = {
@@ -168,7 +170,6 @@ async def chat(query,history,audience,sources,reports):
                         docs_html.append(make_html_source(d, i))
                     docs_html = "".join(docs_html)
 
-                    print(docs_html)
                 except Exception as e:
                     print(f"Error getting documents: {e}")
                     print(event)
@@ -192,6 +193,22 @@ async def chat(query,history,audience,sources,reports):
                                 }
                                 } for x in recommended_content if x.metadata["source"] == "OWID"
                                 ]
+                    
+    
+                    categories = {}
+                    for graph in graphs:
+                        category = graph['metadata']['category']
+                        if category not in categories:
+                            categories[category] = []
+                        categories[category].append(graph['embedding'])
+
+                    # graphs_html = ""
+                    for category, embeddings in categories.items():
+                        # graphs_html += f"<h3>{category}</h3>"
+                        # current_graphs.append(f"<h3>{category}</h3>")
+                        for embedding in embeddings:
+                            current_graphs.append(embedding)
+                            # graphs_html += f"<div>{embedding}</div>"
                                                 
                 except Exception as e:
                     print(f"Error getting graphs: {e}")
@@ -202,6 +219,7 @@ async def chat(query,history,audience,sources,reports):
                         # answer_yet = f"<p><span class='loader'></span>{event_description}</p>"
                         # answer_yet = make_toolbox(event_description, "", checked = False)
                         answer_yet = event_description
+
                         history[-1] = (query,answer_yet)
                     # elif event["event"] == "on_chain_end":
                     #     answer_yet = ""
@@ -226,7 +244,7 @@ async def chat(query,history,audience,sources,reports):
 
 
             history = [tuple(x) for x in history]
-            yield history,docs_html,output_query,output_language,gallery,graphs#,output_query,output_keywords
+            yield history,docs_html,output_query,output_language,gallery,current_graphs #,output_query,output_keywords
 
 
     except Exception as e:
@@ -297,7 +315,7 @@ async def chat(query,history,audience,sources,reports):
     #     gallery = list(set("|".join(gallery).split("|")))
     #     gallery = [get_image_from_azure_blob_storage(x) for x in gallery]
 
-        yield history,docs_html,output_query,output_language,gallery,graphs#,output_query,output_keywords
+        yield history,docs_html,output_query,output_language,gallery,current_graphs #,output_query,output_keywords
 
 
 
@@ -422,31 +440,6 @@ Hello, I am ClimateQ&A, a conversational assistant designed to help you understa
 What do you want to learn ?
 """
 
-# # The list of graphs
-# graphs = [
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-by-gas-and-source?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/warming-fossil-fuels-land-use?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/contributions-global-temp-change?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'Climate Change'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/carbon-dioxide-emissions-factor?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'Fossil Fuels'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/global-warming-land?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}},
-#     {'embedding': '<iframe src="https://ourworldindata.org/grapher/total-ghg-emissions?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>',
-#      'metadata': {'source': 'OWID', 'category': 'CO2 & Greenhouse Gas Emissions'}}
-# ]
-
-
 
 def vote(data: gr.LikeData):
     if data.liked:
@@ -457,13 +450,17 @@ def vote(data: gr.LikeData):
 
 
 with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main-component") as demo:
-    # user_id_state = gr.State([user_id])
+    user_id_state = gr.State([user_id])
+
+    chat_completed_state = gr.State(0)
+    current_graphs = gr.State([])
+    saved_graphs = gr.State([])
 
     with gr.Tab("ClimateQ&A"):
 
         with gr.Row(elem_id="chatbot-row"):
             with gr.Column(scale=2):
-                # state = gr.State([system_template])
+                state = gr.State([system_template])
                 chatbot = gr.Chatbot(
                     value=[(None,init_prompt)],
                     show_copy_button=True,show_label = False,elem_id="chatbot",layout = "panel",
@@ -512,7 +509,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
                     with gr.Tab("Sources",elem_id = "tab-citations",id = 1):
                         sources_textbox = gr.HTML(show_label=False, elem_id="sources-textbox")
-                        # docs_textbox = gr.State("")
+                        docs_textbox = gr.State("")
 
                     # with Modal(visible = False) as config_modal:
                     with gr.Tab("Configuration",elem_id = "tab-config",id = 2):
@@ -545,13 +542,24 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
 
+                    def save_graph(saved_graphs_state, embedding):
+                        saved_graphs_state.append(embedding)
+                        return saved_graphs_state
+
                     with gr.Tab("Recommended content", elem_id="tab-recommended_content", id=3) as recommended_content_tab:        
-                        gr.HTML("Select a category.")
-                        tabs_dict = {}
-                        for category in OWID_CATEGORIES:
-                            tab_id = category.lower().replace(' ', '-')
-                            with gr.Tab(category, elem_id=f"tab-{tab_id}", id=tab_id) as tabs_dict[tab_id]:
-                                category_placeholder = gr.HTML("There are no graphs in this category to display at the moment. Try asking another question.")
+                        @gr.render(inputs=[current_graphs],triggers=[chat_completed_state.change])
+                        def render_graphs(current_graph_list):
+                            global saved_graphs
+                            with gr.Column():
+                                for embedding in current_graph_list:
+                                    graphs_placeholder = gr.HTML(embedding, elem_id="graphs-placeholder")
+                                    save_btn = gr.Button("Save Graph")
+                                    save_btn.click(
+                                        save_graph,
+                                        [saved_graphs, gr.State(embedding)],
+                                        [saved_graphs]
+                                    )
+
 #---------------------------------------------------------------------------------------
 # OTHER TABS
 #---------------------------------------------------------------------------------------
@@ -580,7 +588,11 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     #             with gr.Tab("Citations network",elem_id="papers-network-tab"):
     #                 citations_network = gr.HTML(visible=True,elem_id="papers-citations-network")
 
-
+    with gr.Tab("Saved Graphs", elem_id="tab-saved-graphs", id=4) as saved_graphs_tab:
+        @gr.render(inputs=[saved_graphs], triggers=[saved_graphs.change])
+        def view_saved_graphs(graphs_list):
+            for graph in graphs_list:
+                gr.HTML(graph, elem_id="graphs-placeholder")
             
     with gr.Tab("About",elem_classes = "max-height other-tabs"):
         with gr.Row():
@@ -591,22 +603,28 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     def start_chat(query,history):
         history = history + [(query,None)]
         history = [tuple(x) for x in history]
-        return (gr.update(interactive = False),gr.update(selected=3),history) #,gr.update(selected=1) to select the sources tab by default when a question is submitted
+        return (gr.update(interactive = False),gr.update(selected=1),history)
     
     def finish_chat():
         return (gr.update(interactive = True,value = ""))
+
+    def change_completion_status(current_state):
+        current_state = 1 - current_state
+        return current_state
     
     
     (textbox
         .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
-        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_textbox")
+        .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports, current_graphs], [chatbot,sources_textbox,output_query,output_language,gallery_component, current_graphs],concurrency_limit = 8,api_name = "chat_textbox")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
+        .then(change_completion_status, [chat_completed_state], [chat_completed_state])
     )
 
     (examples_hidden
         .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
-        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports], [chatbot,sources_textbox,output_query,output_language,gallery_component],concurrency_limit = 8,api_name = "chat_examples")
+        .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports,current_graphs], [chatbot,sources_textbox,output_query,output_language,gallery_component, current_graphs],concurrency_limit = 8,api_name = "chat_examples")
         .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
+        .then(change_completion_status, [chat_completed_state], [chat_completed_state])
     )
 
 

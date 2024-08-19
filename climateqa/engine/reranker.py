@@ -34,6 +34,7 @@ def rerank_docs(reranker,docs,query):
     # Get a list of texts from langchain docs
     input_docs = [x.page_content for x in docs]
     
+    print(f"\n\nDOCS:{input_docs}\n\n")
     # Rerank using rerankers library
     results = reranker.rank(query=query, docs=input_docs)
 

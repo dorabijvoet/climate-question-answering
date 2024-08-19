@@ -61,6 +61,7 @@ def make_rag_node(llm,with_docs = True):
 
     async def answer_rag(state,config):
         answer = await rag_chain.ainvoke(state,config)
+        print(f"\n\nAnswer:\n{answer}")
         return {"answer":answer}
 
     return answer_rag
