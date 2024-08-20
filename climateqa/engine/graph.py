@@ -21,6 +21,7 @@ from climateqa.engine.chains.answer_rag import make_rag_node
 from climateqa.engine.chains.answer_rag_graph import make_rag_graph_node
 from climateqa.engine.chains.set_defaults import set_defaults
 from climateqa.engine.chains.graph_retriever import make_graph_retriever_node
+from climateqa.engine.chains.chitchat_categorization import make_chitchat_intent_categorization_node
 
 
 class GraphState(TypedDict):
@@ -30,6 +31,7 @@ class GraphState(TypedDict):
     user_input : str
     language : str
     intent : str
+    search_graphs_chitchat : bool
     query: str
     questions : List[dict]
     answer: str
@@ -51,6 +53,13 @@ def route_intent(state):
     else:
         # Search route
         return "search"
+
+def chitchat_route_intent(state):
+    intent = state["search_graphs_chitchat"]
+    if intent is True:
+        return "retrieve_graphs_chitchat"
+    elif intent is False:
+        return END
     
 def route_translation(state):
     if state["language"].lower() == "english":
@@ -84,6 +93,7 @@ def make_graph_agent(llm, vectorstore_ipcc, vectorstore_graphs, reranker, thresh
     # answer_rag_graph = make_rag_graph_node(llm)
     answer_rag = make_rag_node(llm, with_docs=True)
     answer_rag_no_docs = make_rag_node(llm, with_docs=False)
+    chitchat_categorize_intent = make_chitchat_intent_categorization_node(llm)
 
     # Define the nodes
     workflow.add_node("set_defaults", set_defaults)
@@ -94,8 +104,10 @@ def make_graph_agent(llm, vectorstore_ipcc, vectorstore_graphs, reranker, thresh
     # workflow.add_node("transform_query_ai", transform_query)
     # workflow.add_node("translate_query_ai", translate_query)
     workflow.add_node("answer_chitchat", answer_chitchat)
+    workflow.add_node("chitchat_categorize_intent", chitchat_categorize_intent)
     workflow.add_node("answer_ai_impact", answer_ai_impact)
     workflow.add_node("retrieve_graphs", retrieve_graphs)
+    workflow.add_node("retrieve_graphs_chitchat", retrieve_graphs)
     # workflow.add_node("retrieve_graphs_ai", retrieve_graphs)
     # workflow.add_node("answer_rag_graph", answer_rag_graph)
     # workflow.add_node("answer_rag_graph_ai", answer_rag_graph)
@@ -111,6 +123,12 @@ def make_graph_agent(llm, vectorstore_ipcc, vectorstore_graphs, reranker, thresh
         "categorize_intent",
         route_intent,
         make_id_dict(["answer_chitchat","answer_ai_impact","search"])
+    )
+
+    workflow.add_conditional_edges(
+        "chitchat_categorize_intent",
+        chitchat_route_intent,
+        make_id_dict(["retrieve_graphs_chitchat", END])
     )
 
     workflow.add_conditional_edges(
@@ -134,8 +152,10 @@ def make_graph_agent(llm, vectorstore_ipcc, vectorstore_graphs, reranker, thresh
     # workflow.add_edge("answer_rag_graph", "retrieve_documents")
     workflow.add_edge("answer_rag", END)
     workflow.add_edge("answer_rag_no_docs", END)
-    workflow.add_edge("answer_chitchat", END)
+    workflow.add_edge("answer_chitchat", "chitchat_categorize_intent")
+    # workflow.add_edge("answer_chitchat", END)
     workflow.add_edge("answer_ai_impact", END)
+    workflow.add_edge("retrieve_graphs_chitchat", END)
     # workflow.add_edge("answer_ai_impact", "translate_query_ai")
     # workflow.add_edge("translate_query_ai", "transform_query_ai")
     # workflow.add_edge("transform_query_ai", "retrieve_graphs_ai")

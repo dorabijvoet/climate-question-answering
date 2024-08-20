@@ -50,7 +50,7 @@ def make_graph_retriever_node(vectorstore, reranker, rerank_by_question=True, k_
             print("---- Retrieving graphs ----")
             
             POSSIBLE_SOURCES = ["IEA", "OWID"]
-            questions = state["questions"]
+            questions = state["questions"] if state["questions"] is not None else [state["query"]]
             sources_input = state["sources_input"]
 
             auto_mode = "auto" in sources_input
@@ -65,7 +65,7 @@ def make_graph_retriever_node(vectorstore, reranker, rerank_by_question=True, k_
             
             for i,q in enumerate(questions):
                 
-                question = q["question"]
+                question = q["question"] if isinstance(q, dict) else q
                 
                 print(f"Subquestion {i}: {question}")
                 
