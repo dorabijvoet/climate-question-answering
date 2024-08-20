@@ -185,7 +185,7 @@ async def chat(query,history,audience,sources,reports,current_graphs):
             #     answer_yet = "🔄️ Searching in the knowledge base\n{questions}"
             #     history[-1] = (query,answer_yet)
 
-            elif event["name"] == "retrieve_graphs" and event["event"] == "on_chain_end":
+            elif event["name"] in ["retrieve_graphs", "retrieve_graphs_ai"] and event["event"] == "on_chain_end":
                 try:
                     recommended_content = event["data"]["output"]["recommended_content"]
                     # graphs = [

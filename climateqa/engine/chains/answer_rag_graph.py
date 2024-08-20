@@ -2,7 +2,6 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from typing import List
-from langchain_core.documents.base import Document
 from langchain_openai import ChatOpenAI
 
 from climateqa.engine.chains.prompts import answer_prompt_graph_template
@@ -28,7 +27,7 @@ from climateqa.engine.chains.prompts import answer_prompt_graph_template
 
 
 class RecommendedGraphs(BaseModel):
-    graphs: List[Document] = Field(description="List of the relevant graphs.")
+    graphs: List[str] = Field(description="List of the relevant graphs' embedding code.")
 
 def make_rag_graph_chain(llm):
     parser = JsonOutputParser(pydantic_object=RecommendedGraphs)
@@ -46,6 +45,6 @@ def make_rag_graph_node(llm):
 
     def answer_rag_graph(state):
         output = chain.invoke(state)
-        return {"graph_returned": output}
+        return {"graphs_returned": output}
 
     return answer_rag_graph

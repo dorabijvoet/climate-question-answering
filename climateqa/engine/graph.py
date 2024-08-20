@@ -37,7 +37,7 @@ class GraphState(TypedDict):
     sources_input: List[str]
     documents: List[Document]
     recommended_content : List[Document]
-    graph_returned: Dict[str,str]
+    graphs_returned: Dict[str,str]
 
 def search(state):
     return {}
@@ -81,7 +81,7 @@ def make_graph_agent(llm, vectorstore_ipcc, vectorstore_graphs, reranker, thresh
     answer_ai_impact = make_ai_impact_node(llm)
     retrieve_documents = make_retriever_node(vectorstore_ipcc, reranker)
     retrieve_graphs = make_graph_retriever_node(vectorstore_graphs, reranker)
-    # answer_rag_graph = make_rag_graph_node(llm)
+    answer_rag_graph = make_rag_graph_node(llm)
     answer_rag = make_rag_node(llm, with_docs=True)
     answer_rag_no_docs = make_rag_node(llm, with_docs=False)
 
@@ -91,10 +91,14 @@ def make_graph_agent(llm, vectorstore_ipcc, vectorstore_graphs, reranker, thresh
     workflow.add_node("search", search)
     workflow.add_node("transform_query", transform_query)
     workflow.add_node("translate_query", translate_query)
+    workflow.add_node("transform_query_ai", transform_query)
+    workflow.add_node("translate_query_ai", translate_query)
     workflow.add_node("answer_chitchat", answer_chitchat)
     workflow.add_node("answer_ai_impact", answer_ai_impact)
     workflow.add_node("retrieve_graphs", retrieve_graphs)
-    # workflow.add_node("answer_rag_graph", answer_rag_graph)
+    workflow.add_node("retrieve_graphs_ai", retrieve_graphs)
+    workflow.add_node("answer_rag_graph", answer_rag_graph)
+    workflow.add_node("answer_rag_graph_ai", answer_rag_graph)
     workflow.add_node("retrieve_documents", retrieve_documents)
     workflow.add_node("answer_rag", answer_rag)
     workflow.add_node("answer_rag_no_docs", answer_rag_no_docs)
@@ -125,13 +129,19 @@ def make_graph_agent(llm, vectorstore_ipcc, vectorstore_graphs, reranker, thresh
     workflow.add_edge("set_defaults", "categorize_intent")
     workflow.add_edge("translate_query", "transform_query")
     workflow.add_edge("transform_query", "retrieve_graphs")
-    # workflow.add_edge("retrieve_graphs", "answer_rag_graph")
-    workflow.add_edge("retrieve_graphs", "retrieve_documents")
-    # workflow.add_edge("answer_rag_graph", "retrieve_documents")
+    workflow.add_edge("retrieve_graphs", "answer_rag_graph")
+    # workflow.add_edge("retrieve_graphs", "retrieve_documents")
+    workflow.add_edge("answer_rag_graph", "retrieve_documents")
     workflow.add_edge("answer_rag", END)
     workflow.add_edge("answer_rag_no_docs", END)
     workflow.add_edge("answer_chitchat", END)
-    workflow.add_edge("answer_ai_impact", END)
+    # workflow.add_edge("answer_ai_impact", END)
+    workflow.add_edge("answer_ai_impact", "translate_query_ai")
+    workflow.add_edge("translate_query_ai", "transform_query_ai")
+    workflow.add_edge("transform_query_ai", "retrieve_graphs_ai")
+    workflow.add_edge("retrieve_graphs_ai", "answer_rag_graph_ai")
+    workflow.add_edge("answer_rag_graph_ai", END)
+    # workflow.add_edge("retrieve_graphs_ai", END)
 
     # Compile
     app = workflow.compile()

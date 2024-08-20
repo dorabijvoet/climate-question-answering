@@ -38,6 +38,7 @@ def make_ai_impact_chain(llm):
 def make_ai_impact_node(llm):
 
     ai_impact_chain = make_ai_impact_chain(llm)
+    
 
     async def answer_ai_impact(state,config):
         answer = await ai_impact_chain.ainvoke({"question":state["user_input"]},config)
