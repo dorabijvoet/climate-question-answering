@@ -151,22 +151,13 @@ audience_prompts = {
 
 
 answer_prompt_graph_template = """
-You are ClimateQ&A, an AI Assistant created by Ekimetrics. Your task is to select the graphs which are most relevant to the user question. ALWAYS follow the guidelines given below.
+Given the user question and a list of graphs which are related to the question, rank the graphs based on relevance to the user question. ALWAYS follow the guidelines given below.
 
 ### Guidelines ###
-- Given the user question and the graph titles, select the graphs which are related to the topic of the question.
-- Never select the same graph twice.
-- If none of the graphs are relevant to the topic of the question, return an empty list.
-- NEVER modify the graph HTML embedding, leave them exactly as they are given.
-- Return the selected graphs as a list of their HTML embedding.
+- Keep all the graphs that are given to you.
+- NEVER modify the graph HTML embedding, the category or the source leave them exactly as they are given.
+- Return the ranked graphs as a list of dictionaries with keys 'embedding', 'category', and 'source'.
 - Return a valid JSON output.
-- Use the following example as a template for your response:
-### Example ###
-User question: How has climate change evolved?
-Graphs and their HTML embedding:
-->
-['<iframe src="https://ourworldindata.org/grapher/share-believe-climate?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>', '<iframe src="https://ourworldindata.org/grapher/opinions-young-people-climate?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>', '<iframe src="https://ourworldindata.org/grapher/willingness-climate-action?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>', '<iframe src="https://ourworldindata.org/grapher/support-policies-climate?tab=map" loading="lazy" style="width: 100%; height: 600px; border: 0px none;" allow="web-share; clipboard-write"></iframe>']
-
 
 -----------------------
 User question:
@@ -178,5 +169,5 @@ Graphs and their HTML embedding:
 -----------------------
 {format_instructions}
 
-Output the result as json with a key "graphs" containing a list of the relevant graphs' embedding code. Do not modify the graph HTML embedding. Do not put any message or text before or after the JSON output.
+Output the result as json with a key "graphs" containing a list of dictionaries of the relevant graphs with keys 'embedding', 'category', and 'source'. Do not modify the graph HTML embedding, the category or the source. Do not put any message or text before or after the JSON output.
 """

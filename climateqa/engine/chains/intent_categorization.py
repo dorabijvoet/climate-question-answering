@@ -16,7 +16,7 @@ class IntentCategorizer(BaseModel):
     )
     intent: str = Field(
         enum=[
-            "ai_impact",
+            "ai",
             # "geo_info",
             # "esg"
             "search",
@@ -27,9 +27,9 @@ class IntentCategorizer(BaseModel):
             Any question
 
             Examples:
-            - ai_impact = Environmental impacts of AI: "What are the environmental impacts of AI", "How does AI affect the environment"
-            - search = Searching for any quesiton about climate change, energy, biodiversity, nature, and everything we can find the IPCC or IPBES reports or scientific papers,
-            - chitchat = Any general question that is not related to the environment or climate change or just conversational, or if you don't think searching the IPCC or IPBES reports would be relevant
+            - ai = any question related to AI: "What are the environmental consequences of AI", "How does AI affect the environment"
+            - search = Searching for any question about climate change, energy, biodiversity, nature, and everything we can find the IPCC or IPBES reports or scientific papers. Also questions about individual actions or anything loosely related to the environment.
+            - chitchat = Any chit chat or any question that is not related to the environment or climate change
         """,
             # - geo_info = Geolocated info about climate change: Any question where the user wants to know localized impacts of climate change, eg: "What will be the temperature in Marseille in 2050"
             # - esg = Any question about the ESG regulation, frameworks and standards like the CSRD, TCFD, SASB, GRI, CDP, etc.
@@ -57,6 +57,7 @@ def make_intent_categorization_node(llm):
 
     def categorize_message(state):
         output = categorization_chain.invoke({"input": state["user_input"]})
+        print(f"\n\nOutput intent categorization: {output}\n")
         if "language" not in output: output["language"] = "English"
         output["query"] = state["user_input"]
         return output
