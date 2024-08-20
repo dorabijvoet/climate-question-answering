@@ -229,7 +229,7 @@ async def chat(query,history,audience,sources,reports,current_graphs):
                         # graphs_html += f"<h3>{category}</h3>"
                         # current_graphs.append(f"<h3>{category}</h3>")
                         for embedding in embeddings:
-                            current_graphs.append(embedding)
+                            current_graphs.append([embedding, category])
                             # graphs_html += f"<div>{embedding}</div>"
                                                 
                 except Exception as e:
@@ -469,6 +469,13 @@ def vote(data: gr.LikeData):
     else:
         print(data)
 
+def save_graph(saved_graphs_state, embedding, category):
+    print(f"\nCategory:\n{saved_graphs_state}\n")
+    if category not in saved_graphs_state:
+        saved_graphs_state[category] = []
+    if embedding not in saved_graphs_state[category]:
+        saved_graphs_state[category].append(embedding)
+    return saved_graphs_state, gr.Button("Graph Saved")
 
 
 with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main-component") as demo:
@@ -476,7 +483,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
     chat_completed_state = gr.State(0)
     current_graphs = gr.State([])
-    saved_graphs = gr.State([])
+    saved_graphs = gr.State({})
 
     with gr.Tab("ClimateQ&A"):
 
@@ -563,28 +570,83 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
 
                         output_query = gr.Textbox(label="Query used for retrieval",show_label = True,elem_id = "reformulated-query",lines = 2,interactive = False)
                         output_language = gr.Textbox(label="Language",show_label = True,elem_id = "language",lines = 1,interactive = False)
+                    
+                
+                    with gr.Tab("Recommended content", elem_id="tab-recommended_content", id=3) as recommended_content_tab:
+                        
+                        # @gr.render(inputs=[current_graphs])
+                        # def display_default_recommended(current_graphs):
+                        #     if len(current_graphs)==0:
+                        #         placeholder_message = gr.HTML("<h2>There are no graphs to be displayed at the moment. Try asking another question.</h2>")
 
-                    def save_graph(saved_graphs_state, embedding):
-                        saved_graphs_state.append(embedding)
-                        return saved_graphs_state
-
-                    with gr.Tab("Recommended content", elem_id="tab-recommended_content", id=3) as recommended_content_tab:        
                         @gr.render(inputs=[current_graphs],triggers=[chat_completed_state.change])
                         def render_graphs(current_graph_list):
                             global saved_graphs
                             with gr.Column():
-                                for embedding in current_graph_list:
+                                print(f"\ncurrent_graph_list:\n{current_graph_list}")
+                                for (embedding, category) in current_graph_list:
                                     graphs_placeholder = gr.HTML(embedding, elem_id="graphs-placeholder")
                                     save_btn = gr.Button("Save Graph")
                                     save_btn.click(
                                         save_graph,
-                                        [saved_graphs, gr.State(embedding)],
-                                        [saved_graphs]
+                                        [saved_graphs, gr.State(embedding), gr.State(category)],
+                                        [saved_graphs, save_btn]
                                     )
 
 #---------------------------------------------------------------------------------------
 # OTHER TABS
 #---------------------------------------------------------------------------------------
+
+    # with gr.Tab("Recommended content", elem_id="tab-recommended_content2") as recommended_content_tab2:
+        
+    #     @gr.render(inputs=[current_graphs])
+    #     def display_default_recommended_head(current_graphs_list):
+    #         if len(current_graphs_list)==0:
+    #             gr.HTML("<h2>There are no graphs to be displayed at the moment. Try asking another question.</h2>")
+
+    #     @gr.render(inputs=[current_graphs],triggers=[chat_completed_state.change])
+    #     def render_graphs_head(current_graph_list):
+    #         global saved_graphs
+
+    #         category_dict = defaultdict(list)
+    #         for (embedding, category) in current_graph_list:
+    #             category_dict[category].append(embedding)
+            
+    #         for category in category_dict:
+    #             with gr.Tab(category):
+    #                 splits = [category_dict[category][i:i+3] for i in range(0, len(category_dict[category]), 3)]
+    #                 for row in splits:
+    #                     with gr.Row():
+    #                         for embedding in row:
+    #                             with gr.Column():
+    #                                 gr.HTML(embedding, elem_id="graphs-placeholder")
+    #                                 save_btn = gr.Button("Save Graph")
+    #                                 save_btn.click(
+    #                                     save_graph,
+    #                                     [saved_graphs, gr.State(embedding), gr.State(category)],
+    #                                     [saved_graphs, save_btn]
+    #                                 )
+
+
+
+    with gr.Tab("Saved Graphs", elem_id="tab-saved-graphs") as saved_graphs_tab:
+        
+        @gr.render(inputs=[saved_graphs])
+        def display_default_save(saved):
+            if len(saved)==0:
+                gr.HTML("<h2>You have not saved any graphs yet</h2>")
+
+        @gr.render(inputs=[saved_graphs], triggers=[saved_graphs.change])
+        def view_saved_graphs(graphs_list):
+            categories = [category for category in graphs_list] # graphs_list.keys()
+            for category in categories:
+                with gr.Tab(category):
+                    splits = [graphs_list[category][i:i+3] for i in range(0, len(graphs_list[category]), 3)]
+                    for row in splits:
+                        with gr.Row():
+                            for graph in row:
+                                gr.HTML(graph, elem_id="graphs-placeholder")
+
 
 
     with gr.Tab("Figures",elem_id = "tab-images",elem_classes = "max-height other-tabs"):
@@ -610,11 +672,11 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     #             with gr.Tab("Citations network",elem_id="papers-network-tab"):
     #                 citations_network = gr.HTML(visible=True,elem_id="papers-citations-network")
 
-    with gr.Tab("Saved Graphs", elem_id="tab-saved-graphs", id=4) as saved_graphs_tab:
-        @gr.render(inputs=[saved_graphs], triggers=[saved_graphs.change])
-        def view_saved_graphs(graphs_list):
-            for graph in graphs_list:
-                gr.HTML(graph, elem_id="graphs-placeholder")
+    # with gr.Tab("Saved Graphs", elem_id="tab-saved-graphs", id=4) as saved_graphs_tab:
+    #     @gr.render(inputs=[saved_graphs], triggers=[saved_graphs.change])
+    #     def view_saved_graphs(graphs_list):
+    #         for graph in graphs_list:
+    #             gr.HTML(graph, elem_id="graphs-placeholder")
             
     with gr.Tab("About",elem_classes = "max-height other-tabs"):
         with gr.Row():
@@ -628,7 +690,7 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
         return (gr.update(interactive = False),gr.update(selected=1),history)
     
     def finish_chat():
-        return (gr.update(interactive = True,value = ""))
+        return (gr.update(interactive = True,value = ""),gr.update(selected=3))
 
     def change_completion_status(current_state):
         current_state = 1 - current_state
@@ -638,14 +700,14 @@ with gr.Blocks(title="Climate Q&A", css="style.css", theme=theme,elem_id = "main
     (textbox
         .submit(start_chat, [textbox,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_textbox")
         .then(chat, [textbox,chatbot,dropdown_audience, dropdown_sources,dropdown_reports, current_graphs], [chatbot,sources_textbox,output_query,output_language,gallery_component, current_graphs],concurrency_limit = 8,api_name = "chat_textbox")
-        .then(finish_chat, None, [textbox],api_name = "finish_chat_textbox")
+        .then(finish_chat, None, [textbox,tabs],api_name = "finish_chat_textbox")
         .then(change_completion_status, [chat_completed_state], [chat_completed_state])
     )
 
     (examples_hidden
         .change(start_chat, [examples_hidden,chatbot], [textbox,tabs,chatbot],queue = False,api_name = "start_chat_examples")
         .then(chat, [examples_hidden,chatbot,dropdown_audience, dropdown_sources,dropdown_reports,current_graphs], [chatbot,sources_textbox,output_query,output_language,gallery_component, current_graphs],concurrency_limit = 8,api_name = "chat_examples")
-        .then(finish_chat, None, [textbox],api_name = "finish_chat_examples")
+        .then(finish_chat, None, [textbox,tabs],api_name = "finish_chat_examples")
         .then(change_completion_status, [chat_completed_state], [chat_completed_state])
     )
 
